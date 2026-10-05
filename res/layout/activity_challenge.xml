@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="#1B2631"
+    android:layoutDirection="rtl">
+
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#F7DC6F"
+        android:textSize="22sp"
+        android:text="⏰ چالش بیداری"/>
+
+    <TextView
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:paddingTop="10dp"
+        android:text="این عدد را در کادر پایین وارد کنید"/>
+
+    <TextView
+        android:id="@+id/tvCode"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#2ECC71"
+        android:textSize="72sp"
+        android:textStyle="bold"
+        android:padding="12dp"/>
+
+    <TextView
+        android:id="@+id/tvTimer"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#EC7063"
+        android:textSize="24sp"/>
+
+    <EditText
+        android:id="@+id/etAnswer"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:gravity="center"
+        android:inputType="number"
+        android:textSize="28sp"
+        android:hint="عدد را اینجا بنویسید"/>
+
+    <Button
+        android:id="@+id/btnOk"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="تأیید"
+        android:textSize="20sp"/>
+</LinearLayout>

@@ -1,0 +1,22 @@
+name: ساخت APK
+
+on: [push, workflow_dispatch]
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+      - name: بیلد (build.sh خودش SDK را دانلود می‌کند)
+        run: |
+          chmod +x build.sh
+          ./build.sh
+      - name: آپلود APK به عنوان آرتیفکت
+        uses: actions/upload-artifact@v4
+        with:
+          name: negahban-yar-apk
+          path: negahban-v*.apk

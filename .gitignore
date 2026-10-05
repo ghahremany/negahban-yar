@@ -1,0 +1,5 @@
+build/
+*.apk
+libs/
+release.keystore
+local.properties

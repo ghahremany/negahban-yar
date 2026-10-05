@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@color/bgSoft">
+
+    <!-- محتوای اصلی -->
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:background="@color/primaryDark"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🛡 نگهبان‌یار"
+                android:textColor="#FFFFFF" android:textSize="19sp" android:textStyle="bold"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp" android:paddingEnd="16dp"/>
+
+            <TextView
+                android:id="@+id/btnMenu"
+                android:layout_width="wrap_content" android:layout_height="match_parent"
+                android:text="☰"
+                android:textColor="#FFFFFF" android:textSize="24sp"
+                android:gravity="center"
+                android:paddingStart="22dp" android:paddingEnd="22dp"
+                android:background="?android:attr/selectableItemBackground"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvToday"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="@color/textSub"
+            android:paddingStart="16dp" android:paddingEnd="16dp"
+            android:paddingTop="8dp" android:paddingBottom="2dp"/>
+
+        <ScrollView
+            android:layout_width="match_parent" android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <LinearLayout
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <LinearLayout
+                    android:id="@+id/cardGuard"
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp">
+
+                    <ImageView
+                        android:id="@+id/imgGuard"
+                        android:layout_width="56dp" android:layout_height="56dp"
+                        android:background="@drawable/btn_dark"
+                        android:clipToOutline="true"
+                        android:scaleType="centerCrop"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingStart="12dp">
+
+                        <TextView
+                            android:id="@+id/tvGuardName"
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:textSize="17sp" android:textStyle="bold"
+                            android:textColor="@color/primary"/>
+
+                        <TextView
+                            android:id="@+id/tvGuardShift"
+                            android:layout_width="match_parent" android:layout_height="wrap_content"
+                            android:textSize="13sp"
+                            android:textColor="@color/textSub"
+                            android:paddingTop="2dp"/>
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="_guard_live"
+                        android:visibility="gone"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="📡 وضعیت"
+                        android:textStyle="bold" android:textSize="15sp"
+                        android:textColor="@color/primary"/>
+
+                    <TextView
+                        android:id="@+id/tvStatus"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:paddingTop="6dp"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_card"
+                    android:padding="14dp"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:text="📅 برنامهٔ امشب"
+                        android:textStyle="bold" android:textSize="15sp"
+                        android:textColor="@color/primary"/>
+
+                    <TextView
+                        android:id="@+id/tvPlan"
+                        android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:lineSpacingExtra="3dp"
+                        android:paddingTop="8dp"/>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <Button
+            android:id="@+id/btnScan"
+            android:layout_width="match_parent" android:layout_height="58dp"
+            android:layout_marginStart="14dp" android:layout_marginEnd="14dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/btn_primary"
+            android:textColor="#FFFFFF"
+            android:textSize="19sp"
+            android:text="📷  اسکن ایستگاه"/>
+
+        <Button
+            android:id="@+id/btnResidents"
+            android:layout_width="match_parent" android:layout_height="46dp"
+            android:layout_marginStart="14dp" android:layout_marginEnd="14dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/btn_dark"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:text="🔎  جستجوی ساکنین"/>
+
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="14dp" android:layout_marginEnd="14dp"
+            android:layout_marginBottom="14dp"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnGuests"
+                android:layout_width="0dp" android:layout_height="46dp"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/btn_dark"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:text="🚶 ورود مهمان"/>
+
+            <Button
+                android:id="@+id/btnPackages"
+                android:layout_width="0dp" android:layout_height="46dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp" android:layout_marginEnd="4dp"
+                android:background="@drawable/btn_dark"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:text="📦 دریافت بسته"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- پردهٔ تیرهٔ پشت منو -->
+    <View
+        android:id="@+id/scrim"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:background="#66000000"
+        android:visibility="gone"/>
+
+    <!-- منوی همبرگری — از سمت راست -->
+    <LinearLayout
+        android:id="@+id/drawer"
+        android:layout_width="290dp" android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:elevation="8dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@color/primaryDark"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="🛡 نگهبان‌یار"
+                android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/drawerSub"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textColor="#B3FFFFFF" android:textSize="13sp"
+                android:paddingTop="4dp"/>
+        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent" android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+          <LinearLayout
+              android:layout_width="match_parent" android:layout_height="wrap_content"
+              android:orientation="vertical">
+
+        <TextView android:id="@+id/dHome" style="@style/DrawerItem" android:text="🏠  صفحهٔ اصلی"/>
+        <TextView android:id="@+id/dScan" style="@style/DrawerItem" android:text="📷  اسکن ایستگاه"/>
+        <TextView android:id="@+id/dSearchRes" style="@style/DrawerItem" android:text="🔎  جستجوی ساکنین"/>
+        <TextView android:id="@+id/dGuests" style="@style/DrawerItem" android:text="🚶  ورود مهمان"/>
+        <TextView android:id="@+id/dPackages" style="@style/DrawerItem" android:text="📦  دریافت بسته"/>
+        <TextView android:id="@+id/dManage" style="@style/DrawerItem" android:text="📊  پنل مدیریت"/>
+        <TextView android:id="@+id/dGuards" style="@style/DrawerItem" android:text="👤  نگهبان‌ها و شیفت"/>
+        <TextView android:id="@+id/dResAdmin" style="@style/DrawerItem" android:text="👥  مدیریت ساکنین"/>
+        <TextView android:id="@+id/dSettings" style="@style/DrawerItem" android:text="⚙️  تنظیمات"/>
+        <TextView android:id="@+id/dPrint" style="@style/DrawerItem" android:text="🖨️  چاپ پلاک‌ها"/>
+        <TextView android:id="@+id/dLock" style="@style/DrawerItem" android:text="🔒  قفل گوشی (حالت کشو)"/>
+        <TextView android:id="@+id/dSync" style="@style/DrawerItem" android:text="🔄  ارسال صف به بله"/>
+
+        <View
+            android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
+
+        <TextView android:id="@+id/dDev" style="@style/DrawerItem" android:text="📞  ارتباط با توسعه‌دهنده"/>
+
+          </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+</FrameLayout>
