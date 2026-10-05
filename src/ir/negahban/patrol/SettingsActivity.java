@@ -121,6 +121,16 @@ public class SettingsActivity extends Activity {
             @Override public void onClick(View v) { restoreFlow(); }
         });
 
+        section("🔄 به‌روزرسانی");
+        mkBtn("🔄 بررسی نسخهٔ جدید از گیت‌هاب و نصب").setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { UpdaterUi.run(SettingsActivity.this, false); }
+        });
+        TextView vInfo = new TextView(this);
+        vInfo.setText("نسخهٔ نصب‌شده: v" + Updater.localVersion(this) + "  —  مخزن: github.com/ghahremany/negahban-yar");
+        vInfo.setTextSize(12);
+        vInfo.setTextColor(0xFF607D8B);
+        box.addView(vInfo);
+
         section("🔋 پایداری روی گوشی");
         mkBtn("⏰ اجازهٔ هشدار دقیق (Android 12+)").setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {

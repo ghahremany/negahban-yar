@@ -244,6 +244,7 @@
             android:background="#E0E0E0"
             android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
 
+        <TextView android:id="@+id/dUpdate" style="@style/DrawerItem" android:text="🔄  بررسی به‌روزرسانی"/>
         <TextView android:id="@+id/dDev" style="@style/DrawerItem" android:text="📞  ارتباط با توسعه‌دهنده"/>
 
           </LinearLayout>

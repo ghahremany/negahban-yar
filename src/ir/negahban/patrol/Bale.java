@@ -76,6 +76,15 @@ public class Bale {
         return call(token, "sendMessage", o.toString());
     }
 
+    /** خواندن کامل یک استریم به رشته (برای پاسخ‌های API و به‌روزرسان) */
+    public static String readRawStream(InputStream in) throws Exception {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+        return bo.toString("UTF-8");
+    }
+
     public static boolean tokenOk(String token) {
         return call(token, "getMe", null).ok;
     }
