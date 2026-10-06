@@ -3,250 +3,466 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>نگهبان‌یار — سامانهٔ گشت شبانهٔ QR با گزارش خودکار در مدیر یار</title>
-<meta name="description" content="نگهبان‌یار: نظارت هوشمند گشت شبانهٔ نگهبان با پلاک‌های QR امضاشده و گزارش خودکار در اپ مدیر — نصب ساده، بدون پیچیدگی.">
+<title>سوئیت «یار» — نگهبان‌یار، مدیر یار، ساکن‌یار | مدیریت هوشمند ساختمان</title>
+<meta name="description" content="سوئیت «یار»: نگهبان‌یار (گشت شبانهٔ QR)، مدیر یار (داشبورد ساختمان) و ساکن‌یار (اپ اهالی) — متصل به هاب اختصاصی ساختمان، با گزارش خودکار و پشتیبان ابری.">
+<meta name="theme-color" content="#0A2C40">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Tahoma,"Vazirmatn",sans-serif;background:#f4f7f9;color:#1c2b33;line-height:1.9}
-  .wrap{max-width:1060px;margin:0 auto;padding:0 18px}
-  /* هدر */
-  header{background:linear-gradient(135deg,#0a2c40 0%,#0f3d56 55%,#116e63 100%);color:#fff;padding:26px 0 90px;position:relative}
-  nav{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
-  .brand{font-size:21px;font-weight:bold}
-  .brand small{opacity:.75;font-weight:normal;font-size:12px;display:block}
-  nav a{color:#cfe8f5;text-decoration:none;font-size:14px;margin-inline-start:16px}
-  nav a:hover{color:#fff}
-  .hero{text-align:center;padding-top:46px}
-  .hero h1{font-size:40px;line-height:1.5}
-  .hero p{font-size:18px;opacity:.92;max-width:640px;margin:14px auto 26px}
-  .cta{display:inline-block;background:#12b5a5;color:#fff;text-decoration:none;font-size:17px;font-weight:bold;padding:13px 34px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-  .cta:hover{background:#0fa093}
-  .cta.ghost{background:transparent;border:1.5px solid rgba(255,255,255,.6);margin-inline-start:10px;box-shadow:none}
-  .badge-row{margin-top:26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
-  .pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:5px 16px;font-size:13px}
-  /* شناور نسخه‌ها */
-  .float{margin-top:-62px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
-  .float .f{background:#fff;border-radius:16px;padding:18px;text-align:center;box-shadow:0 8px 26px rgba(15,61,86,.12)}
-  .float .f b{display:block;font-size:16px;color:#0f3d56}
-  .float .f span{font-size:13px;color:#607d8b}
-  .float .ico{font-size:30px}
-  /* بخش‌ها */
-  section{padding:56px 0}
-  h2{font-size:27px;color:#0f3d56;text-align:center;margin-bottom:8px}
-  .lead{text-align:center;color:#607d8b;max-width:640px;margin:0 auto 34px;font-size:15px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-  .card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 3px 14px rgba(15,61,86,.07)}
-  .card h3{color:#0f3d56;font-size:17px;margin-bottom:8px}
-  .card p{font-size:14px;color:#455a64}
-  .card .ico{font-size:26px;margin-bottom:8px;display:block}
-  /* مراحل */
-  .steps{counter-reset:st;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
-  .step{background:#fff;border-radius:16px;padding:22px;position:relative;box-shadow:0 3px 14px rgba(15,61,86,.07)}
-  .step::before{counter-increment:st;content:counter(st);position:absolute;top:-16px;inset-inline-start:20px;width:34px;height:34px;background:#12b5a5;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold}
-  .step h3{color:#0f3d56;font-size:16px;margin:6px 0}
-  .step p{font-size:13.5px;color:#455a64}
-  /* ضدتقلب */
-  .dark{background:#0f3d56;color:#fff;border-radius:22px;padding:38px 30px}
-  .dark h2{color:#fff}
-  .dark .lead{color:#b8d4e3}
-  .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px;margin-top:18px}
-  .chk div{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:14px}
-  /* پلن‌ها */
-  .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;max-width:760px;margin:0 auto}
-  .plan{background:#fff;border-radius:18px;padding:26px;text-align:center;box-shadow:0 3px 14px rgba(15,61,86,.07);border:1.5px solid #e3ecf1}
-  .plan.best{border-color:#12b5a5;box-shadow:0 10px 28px rgba(18,181,165,.18)}
-  .plan .tag{background:#12b5a5;color:#fff;font-size:11px;border-radius:999px;padding:3px 12px;display:inline-block;margin-bottom:10px}
-  .plan h3{color:#0f3d56;font-size:19px}
-  .price{font-size:26px;font-weight:bold;color:#116e63;margin:10px 0 2px}
-  .plan small{color:#90a4ae}
-  .plan ul{list-style:none;margin:14px 0;font-size:13.5px;color:#455a64}
-  .plan li{padding:5px 0}
-  .btn2{display:inline-block;background:#0f3d56;color:#fff;text-decoration:none;padding:10px 26px;border-radius:10px;font-size:14px;font-weight:bold}
-  .btn2:hover{background:#116e63}
-  /* سوالات */
-  details{background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:10px;box-shadow:0 2px 8px rgba(15,61,86,.06)}
-  summary{cursor:pointer;font-weight:bold;color:#0f3d56}
-  details p{font-size:14px;color:#455a64;padding-top:8px}
-  /* دعوت پایانی */
-  .final{text-align:center}
-  .final .cta{margin-top:16px}
-  footer{background:#0a2c40;color:#9fc1d4;text-align:center;padding:26px 0;font-size:13px}
-  footer a{color:#12b5a5;text-decoration:none}
-  @media(max-width:600px){.hero h1{font-size:29px}.hero p{font-size:15px}nav a{margin-inline-start:10px;font-size:13px}}
+  :root{
+    --navy:#0A2C40; --navy2:#0E3A54; --ink:#0B2233; --sub:#5B7083;
+    --brand:#12B5A5; --brand2:#0FA3C9; --line:#E4EDF2; --bg:#F5F9FB; --card:#FFFFFF;
+    --r:20px; --sh:0 8px 28px rgba(10,44,64,.07);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Vazirmatn","IRANSansX","IRANSans",-apple-system,"Segoe UI",Tahoma,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.9; font-size:15px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px; margin:0 auto; padding:0 20px}
+  a{text-decoration:none; color:inherit}
+  img,svg{display:block}
+
+  /* ---------- هدر شیشه‌ای ---------- */
+  header{
+    position:sticky; top:0; z-index:50;
+    background:rgba(10,44,64,.78); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .nav{display:flex; align-items:center; gap:22px; height:62px; color:#fff}
+  .logo{display:flex; align-items:center; gap:10px; font-weight:800; font-size:17px}
+  .logo .mark{
+    width:34px; height:34px; border-radius:11px; display:grid; place-items:center; font-size:16px;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));
+    box-shadow:0 4px 14px rgba(18,181,165,.45);
+  }
+  .logo small{display:block; font-weight:400; font-size:10.5px; opacity:.65; line-height:1.4}
+  .nav .links{display:flex; gap:18px; margin-inline-start:auto; font-size:13.5px; opacity:.85}
+  .nav .links a:hover{color:var(--brand)}
+  @media(max-width:760px){ .nav .links{display:none} }
+  .nav .cta{
+    margin-inline-start:auto; background:linear-gradient(135deg,var(--brand),var(--brand2));
+    padding:8px 16px; border-radius:12px; font-size:13.5px; font-weight:700;
+    box-shadow:0 4px 14px rgba(18,181,165,.35);
+  }
+  @media(min-width:761px){ .nav .cta{margin-inline-start:0} }
+
+  /* ---------- هیرو ---------- */
+  .hero{
+    position:relative; overflow:hidden; color:#fff; text-align:center;
+    background:radial-gradient(1200px 600px at 85% -10%,#11455F 0%,transparent 60%),
+               radial-gradient(900px 500px at 10% 110%,#0D4B57 0%,transparent 55%),
+               linear-gradient(160deg,var(--navy) 0%,#0C3349 55%,#0B3D4E 100%);
+    padding:76px 0 88px;
+  }
+  .hero::before,.hero::after{
+    content:""; position:absolute; border-radius:50%; filter:blur(70px); opacity:.35; pointer-events:none;
+  }
+  .hero::before{width:340px; height:340px; background:var(--brand); top:-120px; inset-inline-start:-90px}
+  .hero::after{width:300px; height:300px; background:#2F80ED; bottom:-140px; inset-inline-end:-70px}
+  .hero .in{position:relative; z-index:1}
+  .kicker{
+    display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700;
+    background:rgba(255,255,255,.09); border:1px solid rgba(255,255,255,.15);
+    padding:6px 14px; border-radius:99px; margin-bottom:22px;
+  }
+  .kicker .dot{width:7px; height:7px; border-radius:50%; background:var(--brand); box-shadow:0 0 10px var(--brand)}
+  .hero h1{font-size:clamp(26px,5.4vw,44px); font-weight:900; line-height:1.5}
+  .hero h1 .grad{
+    background:linear-gradient(90deg,#3BE0CE,#57C7F2);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero p.lead{
+    max-width:640px; margin:16px auto 0; color:#C9DCE6; font-size:clamp(13.5px,2.4vw,16.5px);
+  }
+  .hero .btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; font-weight:800; font-size:15px;
+    padding:13px 26px; border-radius:14px; transition:transform .2s, box-shadow .2s;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn.main{
+    color:#04302B; background:linear-gradient(135deg,#3BE0CE,#19B7D4);
+    box-shadow:0 10px 26px rgba(27,183,212,.4);
+  }
+  .btn.ghost{color:#EAF6FA; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.06)}
+  .chips{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:34px}
+  .chip{
+    font-size:12.5px; color:#D9ECF3; background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.13); padding:7px 15px; border-radius:99px;
+  }
+
+  /* ---------- بخش‌ها ---------- */
+  section{padding:64px 0}
+  .shead{text-align:center; max-width:620px; margin:0 auto 38px}
+  .shead .tag{color:var(--brand2); font-weight:800; font-size:12.5px; letter-spacing:.5px}
+  .shead h2{font-size:clamp(21px,4vw,30px); font-weight:900; margin-top:6px}
+  .shead p{color:var(--sub); margin-top:10px; font-size:14px}
+
+  /* خانوادهٔ یار */
+  .apps{display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:18px}
+  .app{
+    position:relative; background:var(--card); border:1px solid var(--line); border-radius:var(--r);
+    padding:26px 22px 22px; box-shadow:var(--sh); transition:transform .25s, box-shadow .25s;
+    display:flex; flex-direction:column;
+  }
+  .app:hover{transform:translateY(-5px); box-shadow:0 16px 40px rgba(10,44,64,.12)}
+  .app .ic{
+    width:52px; height:52px; border-radius:16px; display:grid; place-items:center; font-size:25px;
+    background:linear-gradient(135deg,#E4FAF6,#DFF3FD); margin-bottom:16px;
+  }
+  .app h3{font-size:17.5px; font-weight:900}
+  .app .role{color:var(--brand2); font-size:12.5px; font-weight:700; margin-top:2px}
+  .app ul{list-style:none; margin:14px 0 18px; flex:1}
+  .app li{position:relative; padding-inline-start:20px; color:#42586A; font-size:13.5px; margin-top:7px}
+  .app li::before{content:""; position:absolute; inset-inline-start:2px; top:11px; width:7px; height:7px; border-radius:50%; background:linear-gradient(135deg,var(--brand),var(--brand2))}
+  .app .go{
+    align-self:flex-start; font-size:13px; font-weight:800; color:var(--brand2);
+    background:#EAF7FB; padding:8px 16px; border-radius:11px;
+  }
+  .badge{
+    position:absolute; top:18px; inset-inline-end:18px; font-size:11px; font-weight:800;
+    padding:4px 11px; border-radius:99px;
+  }
+  .badge.ok{color:#fff; background:linear-gradient(135deg,var(--brand),var(--brand2)); box-shadow:0 4px 12px rgba(18,181,165,.35)}
+  .badge.soon{color:#78909C; background:#EEF3F6; border:1px dashed #CFDDE4}
+  .app.soon{opacity:.72; background:#FBFDFE; border-style:dashed; box-shadow:none}
+  .app.soon .ic{background:#F1F5F8}
+  .app.soon .role{color:#90A4AE}
+
+  /* چرا یار */
+  .why{background:#fff; border-block:1px solid var(--line)}
+  .bento{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:16px}
+  .b{
+    background:var(--bg); border:1px solid var(--line); border-radius:var(--r); padding:22px;
+    transition:transform .25s;
+  }
+  .b:hover{transform:translateY(-4px)}
+  .b .ic{width:44px; height:44px; border-radius:13px; display:grid; place-items:center; font-size:21px;
+    background:linear-gradient(135deg,#E4FAF6,#E3F2FD); margin-bottom:13px}
+  .b h3{font-size:15.5px; font-weight:900}
+  .b p{color:var(--sub); font-size:13px; margin-top:6px}
+
+  /* قدم‌ها */
+  .steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; counter-reset:st}
+  .step{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:24px 22px;
+    box-shadow:var(--sh); position:relative; overflow:hidden;
+  }
+  .step .n{
+    width:44px; height:44px; border-radius:14px; display:grid; place-items:center;
+    font-size:19px; font-weight:900; color:#fff; margin-bottom:14px;
+    background:linear-gradient(135deg,var(--brand),var(--brand2)); box-shadow:0 6px 16px rgba(18,181,165,.35);
+  }
+  .step h3{font-size:15.5px; font-weight:900}
+  .step p{color:var(--sub); font-size:13px; margin-top:6px}
+
+  /* فعال‌سازی */
+  .plans{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; max-width:760px; margin:0 auto}
+  .plan{
+    background:var(--card); border:1px solid var(--line); border-radius:24px; padding:28px 24px;
+    box-shadow:var(--sh); text-align:center; position:relative;
+  }
+  .plan.hot{border:2px solid var(--brand); box-shadow:0 14px 38px rgba(18,181,165,.16)}
+  .plan .flag{
+    position:absolute; top:-13px; inset-inline-start:50%; transform:translateX(50%);
+    font-size:11px; font-weight:800; color:#fff; padding:4px 14px; border-radius:99px;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));
+  }
+  .plan .em{font-size:30px}
+  .plan h3{font-size:16.5px; font-weight:900; margin-top:8px}
+  .plan .price{font-size:23px; font-weight:900; color:var(--navy); margin-top:8px}
+  .plan small{color:var(--sub)}
+  .plan ul{list-style:none; margin-top:14px; text-align:start}
+  .plan li{position:relative; padding-inline-start:22px; font-size:13.5px; color:#42586A; margin-top:8px}
+  .plan li::before{content:"✓"; position:absolute; inset-inline-start:0; color:var(--brand); font-weight:900}
+
+  /* دانلود */
+  .dl{
+    color:#fff; text-align:center; border-radius:28px; padding:52px 24px; position:relative; overflow:hidden;
+    background:radial-gradient(700px 300px at 90% 0%,#11455F 0%,transparent 55%),
+               linear-gradient(160deg,var(--navy),#0B3D4E);
+  }
+  .dl h2{font-size:clamp(21px,4vw,28px); font-weight:900}
+  .dl p{color:#C9DCE6; font-size:13.5px; margin-top:8px}
+  .dl .btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:26px}
+  .dl .apk{
+    display:inline-flex; align-items:center; gap:9px; background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.2); color:#fff; font-weight:700; font-size:13.5px;
+    padding:12px 20px; border-radius:13px; transition:background .2s, transform .2s;
+  }
+  .dl .apk:hover{background:rgba(255,255,255,.16); transform:translateY(-2px)}
+  .dl .note{font-size:12px; color:#8FB4C4; margin-top:18px}
+
+  /* پرسش‌ها */
+  .faq{max-width:720px; margin:0 auto}
+  details{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:4px 18px; margin-top:12px}
+  summary{
+    cursor:pointer; font-weight:800; font-size:14.5px; padding:13px 0; list-style:none;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"+"; font-size:19px; color:var(--brand2); transition:transform .25s; flex:none}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{color:var(--sub); font-size:13.5px; padding:0 0 14px}
+
+  /* پانوشت */
+  footer{background:var(--navy); color:#B9CFDA; text-align:center; padding:34px 20px; font-size:12.5px}
+  footer b{color:#fff}
+  footer a{color:#3BE0CE}
+  footer .top{font-size:13.5px; margin-bottom:8px}
+
+  /* ظهور نرم */
+  .rv{opacity:0; transform:translateY(16px); transition:opacity .55s ease, transform .55s ease}
+  .rv.on{opacity:1; transform:none}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="wrap">
-    <nav>
-      <div class="brand">🧭 سوئیت «یار»<small>نگهبان‌یار • مدیر یار • ساکن‌یار و…</small></div>
-      <div>
-        <a href="#suite">سوئیت یار</a>
-        <a href="#features">امکانات</a>
-        <a href="#how">چطور کار می‌کند؟</a>
-        <a href="#plans">فعال‌سازی</a>
-        <a href="#download">دانلود</a>
-      </div>
-    </nav>
-    <div class="hero">
-      <h1>سوئیت «یار» — ساختمان هوشمند، یکپارچه</h1>
-      <p>مجموعهٔ یکپارچهٔ مدیریت ساختمان با <b>اپ‌های اختصاصی</b>: نگهبان‌یار (گشت QR)، مدیر یار (مغز سیستم) و ساکن‌یار (اپ اهالی — منتشر شد)؛ تعمیر‌یار، خدمات‌یار و فروشگاه‌یار در راه‌اند — همه با نصب ساده، متصل به هاب اختصاصی ساختمان.</p>
-      <a class="cta" href="#download">📥 دانلود رایگان نسخهٔ آزمایشی</a>
-      <a class="cta ghost" href="#how">چطور کار می‌کند؟</a>
-      <div class="badge-row">
-        <span class="pill">📴 بدون کابل‌کشی</span>
-        <span class="pill">💬 گزارش خودکار</span>
-        <span class="pill">🔐 امضای رمزنگاری‌شده</span>
-        <span class="pill">🇮🇷 کاملاً فارسی</span>
-      </div>
+  <div class="wrap nav">
+    <div class="logo">
+      <div class="mark">🧭</div>
+      <div>سوئیت «یار»<small>یک‌بام، مدیر، ساکن — یک‌مجموعه</small></div>
     </div>
+    <nav class="links">
+      <a href="#suite">خانوادهٔ یار</a>
+      <a href="#why">امکانات</a>
+      <a href="#how">راه‌اندازی</a>
+      <a href="#plans">فعال‌سازی</a>
+      <a href="#faq">پرسش‌ها</a>
+    </nav>
+    <a class="cta" href="#download">📥 دانلود</a>
   </div>
 </header>
 
-<div class="wrap">
-  <div class="float">
-    <div class="f"><span class="ico">🎲</span><b>گشت قرعه‌کشی‌شده</b><span>ساعت گشت هر شب تصادفی است؛ نگهبان نمی‌داند کِی زنگ می‌خورد</span></div>
-    <div class="f"><span class="ico">📶</span><b>کار آفلاین</b><span>قطعی اینترنت هم اسکن‌ها را از بین نمی‌برد</span></div>
-    <div class="f"><span class="ico">🤖</span><b>هاب ساختمان</b><span>اهالی خودشان بسته‌ها را چک و عضویت ثبت می‌کنند</span></div>
-    <div class="f"><span class="ico">💸</span><b>هزینهٔ ماهانهٔ صفر</b><span>نیازی به هاست، دامنه یا سرور نیست</span></div>
+<!-- ================= هیرو ================= -->
+<div class="hero">
+  <div class="wrap in">
+    <div class="kicker"><span class="dot"></span> نسل جدید مدیریت ساختمان — سه اپ، یک هاب</div>
+    <h1>ساختمانت را هوشمند کن<br>با <span class="grad">سوئیت «یار»</span></h1>
+    <p class="lead">نگهبان‌یار، مدیر یار و ساکن‌یار؛ سه اپ سبک و امن که با هاب اختصاصی ساختمان‌ت حرف می‌زنند: گشت شبانهٔ QR ضدتقلب، صندوق و شارژ شفاف، بسته و مهمان و کلید پشت‌بام — همه در یک داشبورد.</p>
+    <div class="btns">
+      <a class="btn main" href="#download">📥 دانلود رایگان اپ‌ها</a>
+      <a class="btn ghost" href="#how">چطور راه می‌افتد؟</a>
+    </div>
+    <div class="chips">
+      <span class="chip">🛡 ضدتقلب واقعی</span>
+      <span class="chip">⚡ کار بدون اینترنت + صف خودکار</span>
+      <span class="chip">☁️ پشتیبان ابری رمزنگاری‌شده</span>
+      <span class="chip">🇮🇷 محصول ایرانی</span>
+    </div>
   </div>
 </div>
 
-<section id="suite" style="padding-top:44px">
+<!-- ================= خانوادهٔ یار ================= -->
+<section id="suite">
   <div class="wrap">
-    <h2>👨‍👩‍👧 خانوادهٔ «یار»</h2>
-    <p class="lead">یک سوئیت، چند اپ کوچک و سبک — هر نقش، ابزار خودش را دارد. همه با هم از طریق هاب اختصاصی ساختمان حرف می‌زنند.</p>
-    <div class="grid">
-      <div class="card" style="border:1.5px solid #12b5a5"><span class="ico">🛡</span><h3>نگهبان‌یار <small style="color:#12b5a5">(منتشر شد)</small></h3><p>روی گوشی نگهبانی: گشت شبانهٔ QR با قرعهٔ ساعت، چالش بیداری، ثبت بسته و مهمان، جستجوی ساکنین — گزارش خودکار به مدیر.</p></div>
-      <div class="card" style="border:1.5px solid #12b5a5"><span class="ico">🧭</span><h3>مدیر یار <small style="color:#12b5a5">(منتشر شد)</small></h3><p>روی گوشی مدیر: مغز سیستم — هاب ساختمان، تأیید عضویت اهالی، دفتر ساکنین، چاپ پلاک‌ها، نگهبان‌ها و شیفت‌ها، پشتیبان.</p></div>
-      <div class="card" style="border:1.5px solid #12b5a5"><span class="ico">🏠</span><h3>ساکن‌یار <small style="color:#12b5a5">(منتشر شد)</small></h3><p>برای اهالی: داشبورد اختصاصی (بسته‌های در نگهبانی، وضعیت شارژ، اخبار ساختمان)، عضویت با تأیید مدیر، «بسته‌های من»، درخواست مهمان، ثبت پرداخت شارژ، درخواست کلید پشت‌بام (با تأیید مدیر و اطلاع به نگهبانی) و پیام مستقیم به مدیر.</p></div>
-      <div class="card"><span class="ico">🔧</span><h3>تعمیر‌یار <small style="color:#90a4ae">(به‌زودی)</small></h3><p>ثبت خرابی و درخواست تعمیر از سمت ساکن، پیگیری وضعیت توسط مدیر و سرنشا.</p></div>
-      <div class="card"><span class="ico">🧹</span><h3>خدمات‌یار <small style="color:#90a4ae">(به‌زودی)</small></h3><p>مدیریت خدمات نظافت، شارژ و کارهای دوره‌ای ساختمان با اطلاع‌رسانی خودکار.</p></div>
-      <div class="card"><span class="ico">🛒</span><h3>فروشگاه‌یار <small style="color:#90a4ae">(به‌زودی)</small></h3><p>فروشگاه موردنیاز اهالی ساختمان: سفارش، اطلاع‌رسانی و پیگیری داخل اپ.</p></div>
+    <div class="shead rv">
+      <div class="tag">خانوادهٔ «یار»</div>
+      <h2>هر نقش، اپ خودش</h2>
+      <p>سه اپ منتشرشده و سه اپ در مسیر ساخت — همه متصل به هاب ساختمان تو.</p>
+    </div>
+    <div class="apps">
+      <div class="app rv">
+        <span class="badge ok">منتشر شد</span>
+        <div class="ic">🧭</div>
+        <h3>مدیر یار</h3>
+        <div class="role">مغز ساختمان — گوشی مدیریت</div>
+        <ul>
+          <li>داشبورد یک‌نگاهی: صندوق، شارژ، بدهکار، گشت، مهمان</li>
+          <li>تأیید عضویت اهالی و کلید پشت‌بام با یک لمس</li>
+          <li>ارسال خبر فوری به همهٔ اهالی</li>
+          <li>چاپ پلاک‌های QR و پشتیبان ابری</li>
+        </ul>
+        <a class="go" href="#download">دانلود — ۱۴ روز آزمایش رایگان</a>
+      </div>
+      <div class="app rv">
+        <span class="badge ok">منتشر شد</span>
+        <div class="ic">🛡</div>
+        <h3>نگهبان‌یار</h3>
+        <div class="role">پست نگهبانی — رایگان</div>
+        <ul>
+          <li>گشت شبانهٔ QR با ساعت قرعه و ترتیب اعلامی</li>
+          <li>ثبت ورود/خروج مهمان و بسته‌ها با پیامک</li>
+          <li>اطلاع تحویل کلید پشت‌بام از مدیریت</li>
+          <li>کار بدون اینترنت + ارسال خودکار</li>
+        </ul>
+        <a class="go" href="#download">دانلود رایگان</a>
+      </div>
+      <div class="app rv">
+        <span class="badge ok">منتشر شد</span>
+        <div class="ic">🏠</div>
+        <h3>ساکن‌یار</h3>
+        <div class="role">اپ اهالی — رایگان</div>
+        <ul>
+          <li>داشبورد: بسته‌های منتظر، وضعیت شارژ، اخبار</li>
+          <li>درخواست مهمان و ثبت رسید شارژ</li>
+          <li>درخواست کلید پشت‌بام با مسیر تأیید</li>
+          <li>پیام مستقیم به مدیریت</li>
+        </ul>
+        <a class="go" href="#download">دانلود رایگان</a>
+      </div>
+      <div class="app soon rv">
+        <span class="badge soon">به‌زودی</span>
+        <div class="ic">🔧</div>
+        <h3>تعمیر‌یار</h3>
+        <div class="role">ثبت و پیگیری خرابی‌ها</div>
+      </div>
+      <div class="app soon rv">
+        <span class="badge soon">به‌زودی</span>
+        <div class="ic">🧹</div>
+        <h3>خدمات‌یار</h3>
+        <div class="role">خدمات دوره‌ای ساختمان</div>
+      </div>
+      <div class="app soon rv">
+        <span class="badge soon">به‌زودی</span>
+        <div class="ic">🛒</div>
+        <h3>فروشگاه‌یار</h3>
+        <div class="role">فروشگاه موردنیاز اهالی</div>
+      </div>
     </div>
   </div>
 </section>
 
-<section id="features">
+<!-- ================= چرا یار ================= -->
+<section id="why" class="why">
   <div class="wrap">
-    <h2>همهٔ آنچه یک ساختمان نیاز دارد</h2>
-    <p class="lead">از نظارت گشت شبانه تا مدیریت بسته‌ها و مهمان‌ها — همه در یک اپ سبک (زیر ۱ مگابایت) روی یک گوشی اندرویدی معمولی.</p>
-    <div class="grid">
-      <div class="card"><span class="ico">📷</span><h3>ثبت گشت با QR امضاشده</h3><p>هر ایستگاه یک پلاک QR با امضای رمزنگاری‌شده دارد؛ پلاک جعلی یا عکس‌گرفته‌شده پذیرفته نمی‌شود و در گزارش پرچم می‌خورد.</p></div>
-      <div class="card"><span class="ico">🎲</span><h3>پنجرهٔ گشت تصادفی</h3><p>هر شب ساعت گشت و ترتیب ایستگاه‌ها قرعه کشیده می‌شود؛ الگوی ثابت یعنی فرصت خوابیدن — نگهبان‌یار این فرصت را می‌گیرد.</p></div>
-      <div class="card"><span class="ico">📋</span><h3>گزارش خودکار ۰۷:۰۰ در مدیر یار</h3><p>صبح‌ها گزارش کامل به چت مدیر یا گروه ساختمان می‌رود: گشت‌های کامل/ناقص، ساعت هر ایستگاه، پرچم‌های مشکوک.</p></div>
-      <div class="card"><span class="ico">⏰</span><h3>چالش بیداری</h3><p>یک‌بار در شب، ربات عددی تصادفی نشان میدهد و ۹۰ ثانیه مهلت پاسخ میدهد — نگهبانِ خوابیده جوابی ندارد.</p></div>
-      <div class="card"><span class="ico">📊</span><h3>تقویم شمسیِ رنگی</h3><p>هر شب سبز (سالم) یا قرمز (مشکل‌دار) ثبت می‌شود؛ مدیر با یک نگاه عملکرد ماه را می‌بیند و گزارش هر شب را دوباره می‌فرستد.</p></div>
-      <div class="card"><span class="ico">🤖</span><h3>ربات ساکنین</h3><p>اهالی در ساکن‌یار «بسته‌های من» را می‌بینند؛ ثبت‌نام با تأیید مدیر انجام می‌شود.</p></div>
-      <div class="card"><span class="ico">📦</span><h3>مدیریت بسته و مهمان</h3><p>ثبت بسته با بارکد پستی + پیامک خودکار به گیرنده؛ ثبت ورود/خروج مهمان با کد ملی و پلاک.</p></div>
-      <div class="card"><span class="ico">👥</span><h3>دفتر ساکنین</h3><p>نام، همراه، پلاک، خودرو و پارکینگ هر ساکن — با جستجوی سریع برای نگهبان.</p></div>
-      <div class="card"><span class="ico">💾</span><h3>پشتیبان ابری</h3><p>یک ضربه: کل اطلاعات به‌صورت فایل در چت مدیر ذخیره میشود؛ تعویض گوشی = بازیابی چند ثانیه‌ای.</p></div>
+    <div class="shead rv">
+      <div class="tag">چرا «یار»؟</div>
+      <h2>همه‌آنچه ساختمان لازم دارد</h2>
+      <p>از گم‌شدن تلفن‌ها تا شفافیت صندوق — همه در یک مجموعهٔ سبک و ایمن.</p>
+    </div>
+    <div class="bento">
+      <div class="b rv"><div class="ic">🔐</div><h3>ضدتقلب واقعی</h3><p>ساعت هر اسکن ثبت و کنترل میشود؛ پلاک‌ها امضای رمزنگاری‌شده دارند و دست‌کاری پرچم میخورد.</p></div>
+      <div class="b rv"><div class="ic">📡</div><h3>بدون وقفه</h3><p>اینترنت قطع باشد؟ اسکن‌ها و درخواست‌ها صف میشوند و به محض وصل‌شدن خودکار می‌رسند.</p></div>
+      <div class="b rv"><div class="ic">☁️</div><h3>پشتیبان ابری</h3><p>اطلاعات ساختمان هر شب رمزنگاری‌شده پشتیبان می‌شود؛ ۱۰ نسخهٔ آخر همیشه در دسترس است.</p></div>
+      <div class="b rv"><div class="ic">🔑</div><h3>جریان کلید پشت‌بام</h3><p>ساکن درخواست میدهد → مدیر تأیید میکند → نگهبانی مطلع میشود. بدون تماس و هماهنگی.</p></div>
+      <div class="b rv"><div class="ic">💰</div><h3>صندوق شفاف</h3><p>شارژها با رسید ثبت و با تأیید مدیر به موجودی اضافه میشود؛ بدهکارهای ماه یک‌نگاهی معلوم‌اند.</p></div>
+      <div class="b rv"><div class="ic">📢</div><h3>خبر فوری</h3><p>اعلامیهٔ مدیریت مستقیم روی داشبورد همهٔ اهالی می‌نشیند — بدون پیام‌رسانی و گروه‌های شلوغ.</p></div>
     </div>
   </div>
 </section>
 
-<section id="how" style="background:#e9f2f6">
+<!-- ================= راه‌اندازی ================= -->
+<section id="how">
   <div class="wrap">
-    <h2>در سه قدم راه می‌افتد</h2>
-    <p class="lead">بدون کابل‌کشی، بدون پیچیدگی، بدون نصب روی هر گوشی — فقط یک گوشی اندرویدی معمولی در پست نگهبانی.</p>
+    <div class="shead rv">
+      <div class="tag">راه‌اندازی</div>
+      <h2>در سه قدم</h2>
+      <p>اتصال ساختمان با شمارهٔ همراهِ مدیر — بدون کد پیچیده و هماهنگی مجدد.</p>
+    </div>
     <div class="steps">
-      <div class="step"><h3>اپ را نصب کن</h3><p>فایل نصب را از همین صفحه دانلود و روی گوشی نگهبانی نصب کن. در مدیر یار ساختمان را ثبت کن؛ کد ساختمان را به گوشی نگهبانی و اهالی بده.</p></div>
-      <div class="step"><h3>پلاک‌ها را چاپ کن</h3><p>اپ خودش پلاک‌های QR امضاشده را با پرینتر یا PDF تولید می‌کند. پلاک‌ها را در ایستگاه‌های گشت (لابی، پارکینگ، پشت‌بام…) نصب کن.</p></div>
-      <div class="step"><h3>خیالت راحت باشد</h3><p>از همین شب، گشت‌ها ثبت میشوند و هر صبح ساعت ۷ گزارش کامل در مدیر یار توست. تقویم رنگی، عملکرد هر شب را یک‌نگاهی نشان میدهد.</p></div>
-    </div>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <div class="dark">
-      <h2>🔐 ضدتقلب، لایه‌به‌لایه</h2>
-      <p class="lead">نگهبان‌یار برای «جلب اعتماد» ساخته شده، نه فقط ثبت. این‌ها همان قفل‌هایی هستند که تقلب‌های رایج را می‌بندند:</p>
-      <div class="chk">
-        <div>🎲 ساعت گشت هر شب قرعه کشیده می‌شود</div>
-        <div>🔀 ترتیب ایستگاه‌ها قدم‌به‌قدم اعلام میشود</div>
-        <div>⏱ حداقل فاصلهٔ زمانی بین دو ایستگاه کنترل میشود</div>
-        <div>🔑 هر پلاک امضای HMAC دارد؛ پلاک جعلی فوراً لو میرود</div>
-        <div>⏰ ساعت هر اسکن ثبت و کنترل میشود؛ دست‌کاری پرچم میخورد</div>
-        <div>⛓ رکوردها زنجیره‌ای امضا میشوند؛ حذف رکورد در گزارش آشکار میشود</div>
-        <div>⏰ چالش بیداری تصادفی با مهلت ۹۰ ثانیه</div>
-        <div>🔒 تنظیمات با PIN مدیر قفل است</div>
+      <div class="step rv">
+        <div class="n">۱</div>
+        <h3>مدیر یار را نصب کن</h3>
+        <p>روی گوشی مدیریت: نام ساختمان و شمارهٔ همراهت را وارد کن — همین شماره میشود کد اتصال ساختمان.</p>
+      </div>
+      <div class="step rv">
+        <div class="n">۲</div>
+        <h3>بقیه را با همان شماره وصل کن</h3>
+        <p>نگهبان‌یار روی گوشی نگهبانی و ساکن‌یار روی گوشی اهالی؛ کافی است شمارهٔ مدیر را وارد کنند.</p>
+      </div>
+      <div class="step rv">
+        <div class="n">۳</div>
+        <h3>خیالت راحت باشد</h3>
+        <p>گشت‌ها، بسته‌ها، مهمان‌ها و پرداخت‌ها همه در داشبورد مدیر جمع میشوند و گزارش صبح خودکار می‌آید.</p>
       </div>
     </div>
   </div>
 </section>
 
-<section id="plans" style="background:#e9f2f6">
+<!-- ================= فعال‌سازی ================= -->
+<section id="plans" style="padding-top:0">
   <div class="wrap">
-    <h2>فعال‌سازی مدیر یار</h2>
-    <p class="lead">نگهبان‌یار و ساکن‌یار رایگان‌اند. فقط مدیر یار فعال‌سازی می‌خواهد: دورهٔ آزمایشی ۱۴ روزهٔ رایگان، و برای استفادهٔ دائمی فعال‌سازی ماهانه یا سالانه از توسعه‌دهنده — با یک کد در خود برنامه، بدون نیاز به اینترنت.</p>
+    <div class="shead rv">
+      <div class="tag">هزینه</div>
+      <h2>شفاف و منصفانه</h2>
+      <p>نگهبان‌یار و ساکن‌یار رایگان‌اند؛ فقط مدیر یار فعال‌سازی می‌خواهد.</p>
+    </div>
     <div class="plans">
-      <div class="plan">
-        <h3>🎁 آزمایشی</h3>
-        <div class="price">رایگان</div><small>۱۴ روز</small>
+      <div class="plan rv">
+        <div class="em">🎁</div>
+        <h3>آزمایشی</h3>
+        <div class="price">رایگان</div><small>۱۴ روز — همهٔ امکانات</small>
         <ul>
-          <li>تمام امکانات</li>
+          <li>مدیر یار با تمام قابلیت‌ها</li>
           <li>بدون نیاز به کارت بانکی</li>
-          <li>مناسب برای تست در ساختمان شما</li>
+          <li>مناسب برای تست در ساختمان خودت</li>
         </ul>
-        <a class="btn2" href="#download">شروع کن</a>
       </div>
-      <div class="plan">
-        <h3>📅 ماهانه</h3>
-        <div class="price">ماهانه</div><small>پرداخت هر ماه</small>
+      <div class="plan hot rv">
+        <div class="flag">پیشنهاد ما</div>
+        <div class="em">📅</div>
+        <h3>فعال‌سازی مدیر یار</h3>
+        <div class="price">ماهانه / سالانه</div><small>با یک کد، در خود اپ</small>
         <ul>
-          <li>تمام امکانات برای یک ساختمان</li>
-          <li>فعال‌سازی با کد یک‌خطی</li>
-          <li>پشتیبانی پیام‌رسان</li>
+          <li>فعال‌سازی یک‌خطی بدون اینترنت</li>
+          <li>پشتیبان‌گیری خودکار روزانه</li>
+          <li>پشتیبانی مستقیم توسعه‌دهنده</li>
         </ul>
-        <a class="btn2" href="tel:09127285065">📞 سفارش</a>
-      </div>
-      <div class="plan best">
-        <span class="tag">اقتصادی‌تر</span>
-        <h3>🗓 سالانه</h3>
-        <div class="price">سالانه</div><small>یک پرداخت در سال</small>
-        <ul>
-          <li>تمام امکانات برای یک ساختمان</li>
-          <li>به‌روزرسانی‌های رایگان</li>
-          <li>اولویت پشتیبانی</li>
-        </ul>
-        <a class="btn2" href="tel:09127285065">📞 سفارش</a>
       </div>
     </div>
   </div>
 </section>
 
-<section id="download">
+<!-- ================= دانلود ================= -->
+<section id="download" style="padding-top:0">
   <div class="wrap">
-    <h2>دانلود</h2>
-    <p class="lead">برای اندروید ۷٫۱ به بالا — نصب مستقیم فایل، بدون نیاز به گوگل‌پلی. به‌روزرسانی‌ها خودکار از همین صفحه چک می‌شوند.</p>
-    <div class="final">
-      <p style="color:#455a64;font-size:14px;margin-bottom:10px">سه اپ، یک Release: <b>نگهبان‌یار</b> (گوشی نگهبانی) • <b>مدیر یار</b> (گوشی مدیر) • <b>ساکن‌یار</b> (گوشی اهالی)</p>
-      <a class="cta" href="https://github.com/ghahremany/negahban-yar/releases/latest">📥 دانلود همهٔ اپ‌ها (APK)</a>
+    <div class="dl rv">
+      <h2>همین حالا شروع کن</h2>
+      <p>همیشه آخرین نسخه — نصب روی اندروید ۷ به بالا</p>
+      <div class="btns">
+        <a class="apk" href="https://github.com/ghahremany/negahban-yar/releases/latest/download/modir-v2.3.apk">🧭 مدیر یار v2.3</a>
+        <a class="apk" href="https://github.com/ghahremany/negahban-yar/releases/latest/download/negahban-v2.1.2.apk">🛡 نگهبان‌یار v2.1.2</a>
+        <a class="apk" href="https://github.com/ghahremany/negahban-yar/releases/latest/download/saken-v1.2.2.apk">🏠 ساکن‌یار v1.2.2</a>
+      </div>
+      <div class="note">پس از نصب، در مدیر یار ساختمان را با شمارهٔ همراهت ثبت کن و همان شماره را به گوشی نگهبانی و اهالی بده.</div>
     </div>
   </div>
 </section>
 
-<section style="padding-top:0">
+<!-- ================= پرسش‌ها ================= -->
+<section id="faq" style="padding-top:8px">
   <div class="wrap">
-    <h2>سوالات پرتکرار</h2>
-    <p class="lead"></p>
-    <details><summary>اگر اینترنت قطع شود چه می‌شود؟</summary><p>هیچ چیز از دست نمیرود. اسکن‌ها روی گوشی نگهبانی ذخیره می‌شوند و با اولین اتصال، گزارش‌ها به مدیر یار می‌روند. تنها تفاوت: پیام‌ها به‌جای «همان لحظه»، «به محض وصل شدن» می‌رسند.</p></details>
-    <details><summary>نگهبان می‌تواند گزارش جعل کند؟</summary><p>به‌صورت واقع‌بینانه: نه. ساعت گشت تصادفی است، ترتیب ایستگاه‌ها را اپ اعلام می‌کند، پلاک‌ها امضای رمزنگاری‌شده دارند، فاصلهٔ زمانی بین اسکن‌ها کنترل میشود و زمان واقعی هر اسکن ثبت میشود. به‌روزرسانی صادقانه: در برابر یک متخصص با گوشی روت‌شده هیچ سیستم QR‌ای ضمانت مطلق ندارد.</p></details>
-    <details><summary>روی گوشیِ شخصیِ نگهبان هم نصب می‌شود؟</summary><p>بله، اما پیشنهاد ما یک گوشی سادهٔ اختصاصی ساختمان در پست نگهبانی است — هم قوی‌تر از نظر ضدتقلب است، هم نگهبان به گوشی شخصی‌اش وابسته نمیماند.</p></details>
-    <details><summary>هزینهٔ استفاده دارد؟</summary><p>نگهبان‌یار و ساکن‌یار کاملاً رایگان‌اند. تنها هزینه، فعال‌سازی مدیر یار است: ۱۴ روز آزمایش رایگان، بعد از آن فعال‌سازی ماهانه یا سالانه از توسعه‌دهنده.</p></details>
-    <details><summary>چطور مدیر یار را فعال‌سازی کنم؟</summary><p>با شمارهٔ ۰۹۱۲۷۲۸۵۰۶۵ تماس بگیر. کد فعال‌سازی یک‌خطی را دریافت می‌کنی که در خود برنامه وارد میشود و اعتبارش (ماهانه/سالانه) همان‌جا نمایش داده میشود.</p></details>
+    <div class="shead rv">
+      <div class="tag">پرسش‌های پرتکرار</div>
+      <h2>شاید سؤال تو هم اینجا باشد</h2>
+    </div>
+    <div class="faq rv">
+      <details><summary>هزینهٔ استفاده چقدر است؟</summary><p>نگهبان‌یار و ساکن‌یار کاملاً رایگان‌اند. تنها هزینه، فعال‌سازی مدیر یار است: ۱۴ روز آزمایش رایگان و بعد از آن فعال‌سازی ماهانه یا سالانه از توسعه‌دهنده — با یک کد در خود اپ.</p></details>
+      <details><summary>اتصال سه اپ چطور انجام میشود؟</summary><p>هر ساختمان یک هاب اختصاصی دارد و کد اتصال، شمارهٔ همراهِ مدیر است. ثبتِ دوباره هم کد را عوض نمیکند؛ پس هماهنگی یک‌بار برای همیشه انجام میشود.</p></details>
+      <details><summary>نگهبان می‌تواند گزارش جعل کند؟</summary><p>به‌صورت واقع‌بینانه: نه. ساعت گشت تصادفی است، ترتیب ایستگاه‌ها را اپ اعلام میکند، پلاک‌ها امضای رمزنگاری‌شده دارند و فاصلهٔ زمانی اسکن‌ها کنترل میشود. در برابر گوشیِ روت‌شدهٔ یک متخصص هیچ سیستم QR‌ای ضمانت مطلق ندارد — و ما همین را صادقانه می‌گوییم.</p></details>
+      <details><summary>روی گوشیِ شخصیِ نگهبان هم نصب میشود؟</summary><p>بله، اما پیشنهاد ما یک گوشی سادهٔ اختصاصی در پست نگهبانی است — هم ضدتقلب قوی‌تری دارد و هم نگهبان به گوشی شخصی‌اش وابسته نمیماند.</p></details>
+      <details><summary>اینترنت نبود چه میشود؟</summary><p>هیچ‌چیز از دست نمیرود. اسکن‌ها و درخواست‌ها روی گوشی ذخیره میشوند و با اولین اتصال، خودکار و مرتب به مقصد میرسند.</p></details>
+      <details><summary>اطلاعات اهالی کجا نگهداری میشود؟</summary><p>روی خودِ گوشی مدیریت و نسخهٔ پشتیبانِ رمزنگاری‌شده روی فضای ابری اختصاصی — کلید رمز نزد مدیریت ساختمان است و بازیابی فقط با آن ممکن میشود.</p></details>
+    </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <b style="color:#fff">نگهبان‌یار</b> — سامانهٔ گشت شبانهٔ QR با گزارش خودکار در مدیر یار<br>
-    توسعه و پشتیبانی: محمد جواد قهرمانی • <a href="tel:09127285065">۰۹۱۲۷۲۸۵۰۶۵</a><br>
+    <div class="top"><b>سوئیت «یار»</b> — یک‌بام، مدیر، ساکن، یک‌مجموعه</div>
+    توسعه و پشتیبانی: <b>محمد جواد قهرمانی</b> • <a href="tel:09127285065">۰۹۱۲۷۲۸۵۰۶۵</a><br>
     © تمامی حقوق این نرم‌افزار برای توسعه‌دهندهٔ آن محفوظ است.
   </div>
 </footer>
 
+<script>
+  // ظهور نرم بخش‌ها هنگام اسکرول
+  (function(){
+    var els = document.querySelectorAll('.rv');
+    if (!('IntersectionObserver' in window)) {
+      for (var i=0;i<els.length;i++) els[i].classList.add('on');
+      return;
+    }
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if (e.isIntersecting) { e.target.classList.add('on'); io.unobserve(e.target); }
+      });
+    }, {threshold:.12});
+    for (var i=0;i<els.length;i++) io.observe(els[i]);
+  })();
+</script>
 </body>
 </html>
