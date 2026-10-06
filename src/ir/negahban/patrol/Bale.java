@@ -132,6 +132,44 @@ public class Bale {
         return r;
     }
 
+    /** یک پیام ورودی ربات */
+    public static class Update {
+        public long updateId, chatId;
+        public String text = "";
+    }
+
+    /** getUpdates با long-poll برای ربات ساکنین؛ خروجی null = خطا (توکن/شبکه) */
+    public static java.util.ArrayList<Update> pollUpdates(String token, long offset) {
+        try {
+            URL u = new URL("https://tapi.bale.ai/bot" + token + "/getUpdates?timeout=25"
+                    + (offset > 0 ? "&offset=" + offset : ""));
+            HttpURLConnection c = (HttpURLConnection) u.openConnection();
+            c.setConnectTimeout(15000);
+            c.setReadTimeout(40000);
+            int code = c.getResponseCode();
+            InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+            String body = in == null ? "" : readRawStream(in);
+            if (code != 200) return null;
+            JSONObject j = new JSONObject(body);
+            if (!j.optBoolean("ok", false)) return null;
+            java.util.ArrayList<Update> out = new java.util.ArrayList<>();
+            JSONArray a = j.getJSONArray("result");
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject up = a.getJSONObject(i);
+                JSONObject msg = up.optJSONObject("message");
+                if (msg == null) continue;
+                Update x = new Update();
+                x.updateId = up.optLong("update_id", 0);
+                x.chatId = msg.getJSONObject("chat").optLong("id", 0);
+                x.text = msg.optString("text", "").trim();
+                if (x.chatId != 0 && !x.text.isEmpty()) out.add(x);
+            }
+            return out;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /** chat_id آخرین پیامی که به ربات رسیده (مدیر یک‌بار به ربات پیام می‌دهد) */
     public static Long lastChatId(String token) {
         Res r = call(token, "getUpdates", null);

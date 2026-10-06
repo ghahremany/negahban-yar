@@ -233,8 +233,9 @@ public class PackageActivity extends Activity {
             lp.topMargin = dp(6);
             row.setLayoutParams(lp);
 
+            boolean given = "1".equals(k[8]);
             TextView head = new TextView(this);
-            head.setText("📦 " + k[2] + (k[3] == null || k[3].isEmpty() ? "" : "  🔖 " + k[3]));
+            head.setText("📦 " + k[2] + (k[3] == null || k[3].isEmpty() ? "" : "  🔖 " + k[3]) + (given ? "   ✅ تحویل شد" : ""));
             head.setTypeface(null, Typeface.BOLD);
             head.setTextSize(15);
             row.addView(head);
@@ -242,10 +243,33 @@ public class PackageActivity extends Activity {
             TextView info = new TextView(this);
             info.setText("👤 " + k[4] + (k[6] == null || k[6].isEmpty() ? "" : "  |  🏢 بلوک " + k[6])
                     + "  |  📞 " + Scheduler.fa(k[5] == null ? "" : k[5])
-                    + "\n🕐 " + Scheduler.fa(Scheduler.hm(Long.parseLong(k[1]))) + " — " + smsLabel(k[7]));
+                    + "\n🕐 " + Scheduler.fa(Scheduler.hm(Long.parseLong(k[1]))) + " — " + smsLabel(k[7])
+                    + (given ? "\n🤝 تحویل: " + Scheduler.fa(Scheduler.hm(Long.parseLong(k[9]))) : ""));
             info.setTextSize(13);
             info.setTextColor(0xFF455A64);
             row.addView(info);
+
+            if (!given) {
+                Button givenBtn = new Button(this);
+                givenBtn.setText("🤝 تحویل شد");
+                givenBtn.setTextColor(Color.WHITE);
+                givenBtn.setTextSize(13);
+                givenBtn.setBackgroundResource(R.drawable.btn_dark);
+                LinearLayout.LayoutParams gLp = new LinearLayout.LayoutParams(-2, -2);
+                gLp.topMargin = dp(6);
+                givenBtn.setLayoutParams(gLp);
+                final long pkgId = Long.parseLong(k[0]);
+                givenBtn.setOnClickListener(new View.OnClickListener() {
+                    @Override public void onClick(View v) {
+                        PatrolStore st2 = new PatrolStore(PackageActivity.this);
+                        st2.markGiven(pkgId);
+                        st2.close();
+                        toast("تحویل ثبت شد ✅");
+                        refresh();
+                    }
+                });
+                row.addView(givenBtn);
+            }
             listBox.addView(row);
         }
     }

@@ -46,7 +46,7 @@ public class MainActivity extends Activity {
         cardGuard.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { askPinGuard(); }
         });
-        drawerSub.setText(Cfg.building(this) + " • نسخهٔ ۰٫۹ • بدون سرور");
+        drawerSub.setText(Cfg.building(this) + " • نسخهٔ ۱٫۰ • بدون سرور");
 
         // اول از همه منو را بیرونِ صفحه بگذار تا موقع باز شدن انیمیشن داشته باشد
         drawer.post(new Runnable() {
@@ -120,6 +120,9 @@ public class MainActivity extends Activity {
                     new Thread(new Runnable() {
                         @Override public void run() { Sync.drain(MainActivity.this); }
                     }).start();
+                } else if (id == R.id.dMembers) {
+                    closeDrawer();
+                    askPinMembers();
                 } else if (id == R.id.dUpdate) {
                     closeDrawer();
                     UpdaterUi.run(MainActivity.this, false);
@@ -128,7 +131,7 @@ public class MainActivity extends Activity {
                 }
             }
         };
-        int[] items = {R.id.dHome, R.id.dScan, R.id.dSearchRes, R.id.dGuests, R.id.dPackages, R.id.dManage, R.id.dGuards, R.id.dResAdmin, R.id.dSettings, R.id.dPrint, R.id.dLock, R.id.dSync, R.id.dUpdate, R.id.dDev};
+        int[] items = {R.id.dHome, R.id.dScan, R.id.dSearchRes, R.id.dGuests, R.id.dPackages, R.id.dMembers, R.id.dManage, R.id.dGuards, R.id.dResAdmin, R.id.dSettings, R.id.dPrint, R.id.dLock, R.id.dSync, R.id.dUpdate, R.id.dDev};
         for (int it : items) findViewById(it).setOnClickListener(nav);
     }
 
@@ -260,6 +263,27 @@ public class MainActivity extends Activity {
                 .show();
     }
 
+    private void askPinMembers() {
+        final EditText et = new EditText(this);
+        et.setInputType(InputType.TYPE_CLASS_NUMBER);
+        et.setHint("PIN مدیر");
+        new AlertDialog.Builder(this)
+                .setTitle("✅ تأیید اعضا")
+                .setMessage("PIN مدیر را وارد کنید")
+                .setView(et)
+                .setPositiveButton("ورود", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        if (Cfg.pin(MainActivity.this).equals(et.getText().toString().trim())) {
+                            startActivity(new Intent(MainActivity.this, MembersActivity.class));
+                        } else {
+                            Toast.makeText(MainActivity.this, "PIN اشتباه است", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .setNegativeButton("انصراف", null)
+                .show();
+    }
+
     private void devDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("📞 ارتباط با توسعه‌دهنده")
@@ -300,6 +324,7 @@ public class MainActivity extends Activity {
         }).start();
         maybeShowCrash();
         maybeAutoUpdate();
+        if (Cfg.botEnabled(this)) BotService.start(this);
     }
 
     /** چک خودکار: حداکثر یک‌بار در شبانه‌روز، بی‌صدا؛ فقط وقتی نسخهٔ جدید هست پنجره می‌آید */

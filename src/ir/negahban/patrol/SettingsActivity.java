@@ -24,7 +24,7 @@ import java.util.ArrayList;
 public class SettingsActivity extends Activity {
 
     EditText etToken, etChat, etKey, etBuilding, etCount, etWindow, etNightStart, etNightEnd, etGap, etReport, etPin;
-    CheckBox cbWake;
+    CheckBox cbWake, cbBot;
     LinearLayout box, stBox;
     final ArrayList<EditText> stIds = new ArrayList<>();
     final ArrayList<EditText> stNames = new ArrayList<>();
@@ -91,6 +91,16 @@ public class SettingsActivity extends Activity {
         cbWake = new CheckBox(this);
         cbWake.setText("چالش بیداری تصادفی فعال باشد");
         box.addView(cbWake);
+
+        cbBot = new CheckBox(this);
+        cbBot.setText("🤖 ربات ساکنین فعال باشد (پاسخگویی در بله: بسته‌ها و عضویت)");
+        cbBot.setChecked(Cfg.botEnabled(this));
+        box.addView(cbBot);
+        TextView botNote = new TextView(this);
+        botNote.setText("با فعال بودن، یک اعلان ثابت «ربات فعال» در گوشی دیده می‌شود و مصرف باتری کمی بیشتر است. تأیید عضویت‌ها: منوی ☰ → ✅ تأیید اعضا");
+        botNote.setTextSize(12);
+        botNote.setTextColor(0xFF607D8B);
+        box.addView(botNote);
 
         section("🔐 امنیت و پلاک‌ها");
         etKey = field("کلید امضای پلاک‌ها (HMAC)", Cfg.keyHex(this), "۶۴ کاراکتر هگز — با ابزار چاپ پلاک یکی باشد", InputType.TYPE_CLASS_TEXT);
@@ -274,12 +284,14 @@ public class SettingsActivity extends Activity {
             Cfg.set(this, "minGap", Math.max(0, Integer.parseInt(etGap.getText().toString().trim())));
             Cfg.set(this, "reportMin", hhmm2min(etReport.getText().toString()));
             Cfg.set(this, "wakeOn", cbWake.isChecked());
+            Cfg.set(this, "botEnabled", cbBot.isChecked());
             String pin = etPin.getText().toString().trim();
             if (!pin.isEmpty()) Cfg.set(this, "pin", pin);
             Cfg.set(this, "tokenInvalid", false);
 
             Cfg.set(this, "plan", "{}");
             Scheduler.ensurePlan(this);
+            if (Cfg.botEnabled(this)) BotService.start(this); else BotService.stop(this);
             toast("✅ ذخیره شد — برنامهٔ امشب قرعه کشیده شد");
         } catch (Exception e) {
             toast("خطا در ذخیره: قالب ساعت‌ها HH:MM باشد");

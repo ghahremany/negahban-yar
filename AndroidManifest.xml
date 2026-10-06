@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ir.negahban.patrol"
-    android:versionCode="10"
-    android:versionName="0.9">
+    android:versionCode="11"
+    android:versionName="1.0">
 
     <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34"/>
 
@@ -10,6 +10,8 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.SEND_SMS"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
@@ -43,6 +45,7 @@
             android:launchMode="singleTop" android:excludeFromRecents="true"
             android:showOnLockScreen="true"/>
 
+        <service android:name=".BotService" android:exported="false"/>
         <receiver android:name=".AlarmReceiver" android:exported="false"/>
         <provider android:name=".ApkProvider" android:authorities="ir.negahban.patrol.apk"
             android:exported="false" android:grantUriPermissions="true"/>

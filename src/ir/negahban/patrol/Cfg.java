@@ -21,6 +21,7 @@ public class Cfg {
     public static int nightEnd(Context c) { return p(c).getInt("nightEnd", 360); }
     public static int minGapSec(Context c) { return p(c).getInt("minGap", 60); }
     public static boolean wakeOn(Context c) { return p(c).getBoolean("wakeOn", true); }
+    public static boolean botEnabled(Context c) { return p(c).getBoolean("botEnabled", false); }
     public static int reportMin(Context c) { return p(c).getInt("reportMin", 420); }   // ۰۷:۰۰
 
     public static String keyHex(Context c) {

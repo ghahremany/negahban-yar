@@ -13,15 +13,16 @@ public class PatrolStore extends SQLiteOpenHelper {
 
     private final Context ctx;
 
-    public PatrolStore(Context c) { super(c, "patrol.db", null, 3); ctx = c.getApplicationContext(); }
+    public PatrolStore(Context c) { super(c, "patrol.db", null, 4); ctx = c.getApplicationContext(); }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE ev(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, type TEXT, station INTEGER, flag TEXT, extra TEXT)");
         db.execSQL("CREATE TABLE q(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, txt TEXT, sent INTEGER DEFAULT 0, sentTs INTEGER DEFAULT 0)");
-        db.execSQL("CREATE TABLE resident(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, mobile TEXT, plate TEXT, car TEXT, parking TEXT)");
+        db.execSQL("CREATE TABLE resident(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, mobile TEXT, plate TEXT, car TEXT, parking TEXT, chatId INTEGER DEFAULT 0, approved INTEGER DEFAULT 1)");
         db.execSQL("CREATE TABLE guest(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, name TEXT, mobile TEXT, plate TEXT, nid TEXT, outTs INTEGER DEFAULT 0)");
-        db.execSQL("CREATE TABLE pkg(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, kind TEXT, barcode TEXT, rname TEXT, rmobile TEXT, rblock TEXT, sms TEXT DEFAULT 'PENDING')");
+        db.execSQL("CREATE TABLE pkg(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, kind TEXT, barcode TEXT, rname TEXT, rmobile TEXT, rblock TEXT, sms TEXT DEFAULT 'PENDING', claimed INTEGER DEFAULT 0, givenTs INTEGER DEFAULT 0)");
+        db.execSQL("CREATE TABLE member_req(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, chatId INTEGER, name TEXT, mobile TEXT, unit TEXT, status TEXT DEFAULT 'PENDING')");
     }
 
     @Override
@@ -30,6 +31,13 @@ public class PatrolStore extends SQLiteOpenHelper {
         if (o < 3) {
             db.execSQL("CREATE TABLE IF NOT EXISTS guest(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, name TEXT, mobile TEXT, plate TEXT, nid TEXT, outTs INTEGER DEFAULT 0)");
             db.execSQL("CREATE TABLE IF NOT EXISTS pkg(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, kind TEXT, barcode TEXT, rname TEXT, rmobile TEXT, rblock TEXT, sms TEXT DEFAULT 'PENDING')");
+        }
+        if (o < 4) {
+            try { db.execSQL("ALTER TABLE resident ADD COLUMN chatId INTEGER DEFAULT 0"); } catch (Exception ignored) {}
+            try { db.execSQL("ALTER TABLE resident ADD COLUMN approved INTEGER DEFAULT 1"); } catch (Exception ignored) {}
+            try { db.execSQL("ALTER TABLE pkg ADD COLUMN claimed INTEGER DEFAULT 0"); } catch (Exception ignored) {}
+            try { db.execSQL("ALTER TABLE pkg ADD COLUMN givenTs INTEGER DEFAULT 0"); } catch (Exception ignored) {}
+            db.execSQL("CREATE TABLE IF NOT EXISTS member_req(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, chatId INTEGER, name TEXT, mobile TEXT, unit TEXT, status TEXT DEFAULT 'PENDING')");
         }
     }
 
@@ -243,6 +251,111 @@ public class PatrolStore extends SQLiteOpenHelper {
         } finally { db.close(); }
     }
 
+    // ---------- عضویت ساکنین از طریق ربات ----------
+
+    /** ساکنِ تأییدشدهٔ متصل به این chat بله یا null: [id, name, mobile, parking] */
+    public String[] resByChat(long chatId) {
+        SQLiteDatabase db = getReadableDatabase();
+        try {
+            Cursor cur = db.rawQuery("SELECT id, name, mobile, parking FROM resident WHERE chatId=? AND approved=1 LIMIT 1",
+                    new String[]{String.valueOf(chatId)});
+            try {
+                if (cur.moveToFirst()) return new String[]{String.valueOf(cur.getLong(0)), cur.getString(1), cur.getString(2), cur.getString(3)};
+            } finally { cur.close(); }
+            return null;
+        } finally { db.close(); }
+    }
+
+    /** اتصال chat بله به ساکن موجود بر اساس شمارهٔ همراه؛ خروجی: شناسهٔ ردیف یا ۰ */
+    public long linkChatByMobile(long chatId, String mobile) {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+            Cursor cur = db.rawQuery("SELECT id FROM resident WHERE REPLACE(REPLACE(REPLACE(mobile,'-',''),' ',''),'‎','') LIKE ? AND approved=1 LIMIT 1",
+                    new String[]{"%" + mobile});
+            long id = 0;
+            try { if (cur.moveToFirst()) id = cur.getLong(0); } finally { cur.close(); }
+            if (id > 0) {
+                ContentValues v = new ContentValues();
+                v.put("chatId", chatId);
+                db.update("resident", v, "id=?", new String[]{String.valueOf(id)});
+            }
+            return id;
+        } finally { db.close(); }
+    }
+
+    public long addMemberReq(long ts, long chatId, String name, String mobile, String unit) {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+            ContentValues v = new ContentValues();
+            v.put("ts", ts); v.put("chatId", chatId); v.put("name", name);
+            v.put("mobile", mobile); v.put("unit", unit); v.put("status", "PENDING");
+            return db.insert("member_req", null, v);
+        } finally { db.close(); }
+    }
+
+    /** درخواستِ در انتظارِ همین chat یا null */
+    public String[] pendingReqByChat(long chatId) {
+        SQLiteDatabase db = getReadableDatabase();
+        try {
+            Cursor cur = db.rawQuery("SELECT id FROM member_req WHERE chatId=? AND status='PENDING' LIMIT 1", new String[]{String.valueOf(chatId)});
+            try {
+                if (cur.moveToFirst()) return new String[]{String.valueOf(cur.getLong(0))};
+            } finally { cur.close(); }
+            return null;
+        } finally { db.close(); }
+    }
+
+    /** [id, ts, chatId, name, mobile, unit] */
+    public ArrayList<String[]> reqsByStatus(String status, int limit) {
+        SQLiteDatabase db = getReadableDatabase();
+        try {
+            ArrayList<String[]> out = new ArrayList<>();
+            Cursor cur = db.rawQuery("SELECT id, ts, chatId, name, mobile, unit FROM member_req WHERE status=? ORDER BY id DESC LIMIT ?",
+                    new String[]{status, String.valueOf(limit)});
+            try {
+                while (cur.moveToNext()) out.add(new String[]{String.valueOf(cur.getLong(0)), String.valueOf(cur.getLong(1)),
+                        String.valueOf(cur.getLong(2)), cur.getString(3), cur.getString(4), cur.getString(5)});
+            } finally { cur.close(); }
+            return out;
+        } finally { db.close(); }
+    }
+
+    public void setReqStatus(long id, String status) {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+            ContentValues v = new ContentValues();
+            v.put("status", status);
+            db.update("member_req", v, "id=?", new String[]{String.valueOf(id)});
+        } finally { db.close(); }
+    }
+
+    // ---------- تحویل بسته ----------
+
+    public void markGiven(long id) {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+            ContentValues v = new ContentValues();
+            v.put("claimed", 1);
+            v.put("givenTs", now());
+            db.update("pkg", v, "id=?", new String[]{String.valueOf(id)});
+        } finally { db.close(); }
+    }
+
+    /** بسته‌های تحویل‌نشدهٔ یک شمارهٔ همراه: [id, ts, kind, barcode, rblock] */
+    public ArrayList<String[]> pendingForMobile(String mobile) {
+        SQLiteDatabase db = getReadableDatabase();
+        try {
+            ArrayList<String[]> out = new ArrayList<>();
+            Cursor cur = db.rawQuery("SELECT id, ts, kind, barcode, rblock FROM pkg WHERE rmobile LIKE ? AND claimed=0 ORDER BY id DESC LIMIT 10",
+                    new String[]{"%" + mobile});
+            try {
+                while (cur.moveToNext()) out.add(new String[]{String.valueOf(cur.getLong(0)), String.valueOf(cur.getLong(1)),
+                        cur.getString(2), cur.getString(3), cur.getString(4)});
+            } finally { cur.close(); }
+            return out;
+        } finally { db.close(); }
+    }
+
     // ---------- ابزار پشتیبان‌گیری ----------
 
     /** درج رویداد با مقادیر اصلی (برای بازیابی پشتیبان) */
@@ -315,17 +428,18 @@ public class PatrolStore extends SQLiteOpenHelper {
         } finally { db.close(); }
     }
 
-    /** [id, ts, kind, barcode, rname, rmobile, rblock, sms] — جدیدترین اول */
+    /** [id, ts, kind, barcode, rname, rmobile, rblock, sms, claimed, givenTs] — جدیدترین اول */
     public ArrayList<String[]> allPackages(int limit) {
         SQLiteDatabase db = getReadableDatabase();
         try {
             ArrayList<String[]> out = new ArrayList<>();
-            Cursor cur = db.rawQuery("SELECT id, ts, kind, barcode, rname, rmobile, rblock, sms FROM pkg ORDER BY id DESC LIMIT ?",
+            Cursor cur = db.rawQuery("SELECT id, ts, kind, barcode, rname, rmobile, rblock, sms, claimed, givenTs FROM pkg ORDER BY id DESC LIMIT ?",
                     new String[]{String.valueOf(limit)});
             try {
                 while (cur.moveToNext()) {
                     out.add(new String[]{String.valueOf(cur.getLong(0)), String.valueOf(cur.getLong(1)),
-                            cur.getString(2), cur.getString(3), cur.getString(4), cur.getString(5), cur.getString(6), cur.getString(7)});
+                            cur.getString(2), cur.getString(3), cur.getString(4), cur.getString(5), cur.getString(6), cur.getString(7),
+                            String.valueOf(cur.getInt(8)), String.valueOf(cur.getLong(9))});
                 }
             } finally { cur.close(); }
             return out;

@@ -16,6 +16,7 @@ public class BootReceiver extends BroadcastReceiver {
                 try {
                     Scheduler.ensurePlan(c);
                     Sync.drain(c);
+                    if (Cfg.botEnabled(c)) BotService.start(c);
                 } catch (Exception ignored) {
                 } finally {
                     pr.finish();
