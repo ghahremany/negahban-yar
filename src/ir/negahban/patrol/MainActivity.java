@@ -32,6 +32,12 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         CrashCatcher.install(this);
+        // گیت لایسنس: بدون لایسنس معتبر/آزمایشی → صفحهٔ لایسنس
+        if (License.status(this) == 2) {
+            startActivity(new Intent(this, LicenseActivity.class));
+            finish();
+            return;
+        }
         setContentView(R.layout.activity_main);
         tvStatus = findViewById(R.id.tvStatus);
         tvPlan = findViewById(R.id.tvPlan);
@@ -46,7 +52,7 @@ public class MainActivity extends Activity {
         cardGuard.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { askPinGuard(); }
         });
-        drawerSub.setText(Cfg.building(this) + " • نسخهٔ ۱٫۰ • بدون سرور");
+        drawerSub.setText(Cfg.building(this) + " • نسخهٔ ۱٫۱ • بدون سرور");
 
         // اول از همه منو را بیرونِ صفحه بگذار تا موقع باز شدن انیمیشن داشته باشد
         drawer.post(new Runnable() {
@@ -126,12 +132,16 @@ public class MainActivity extends Activity {
                 } else if (id == R.id.dUpdate) {
                     closeDrawer();
                     UpdaterUi.run(MainActivity.this, false);
+                } else if (id == R.id.dPage) {
+                    closeDrawer();
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(LicenseActivity.PAGE_URL))); }
+                    catch (Exception e) { Toast.makeText(MainActivity.this, LicenseActivity.PAGE_URL, Toast.LENGTH_LONG).show(); }
                 } else if (id == R.id.dDev) {
                     devDialog();
                 }
             }
         };
-        int[] items = {R.id.dHome, R.id.dScan, R.id.dSearchRes, R.id.dGuests, R.id.dPackages, R.id.dMembers, R.id.dManage, R.id.dGuards, R.id.dResAdmin, R.id.dSettings, R.id.dPrint, R.id.dLock, R.id.dSync, R.id.dUpdate, R.id.dDev};
+        int[] items = {R.id.dHome, R.id.dScan, R.id.dSearchRes, R.id.dGuests, R.id.dPackages, R.id.dMembers, R.id.dManage, R.id.dGuards, R.id.dResAdmin, R.id.dSettings, R.id.dPrint, R.id.dLock, R.id.dSync, R.id.dUpdate, R.id.dPage, R.id.dDev};
         for (int it : items) findViewById(it).setOnClickListener(nav);
     }
 
@@ -324,6 +334,12 @@ public class MainActivity extends Activity {
         }).start();
         maybeShowCrash();
         maybeAutoUpdate();
+        // اگر لایسنس وسط کار تمام شد
+        if (License.status(this) == 2) {
+            startActivity(new Intent(this, LicenseActivity.class));
+            finish();
+            return;
+        }
         if (Cfg.botEnabled(this)) BotService.start(this);
     }
 

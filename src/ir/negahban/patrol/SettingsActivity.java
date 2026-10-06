@@ -43,6 +43,21 @@ public class SettingsActivity extends Activity {
 
         title("⚙️ تنظیمات سامانهٔ گشت");
 
+        // نوار لایسنس
+        TextView lic = new TextView(this);
+        int lst = License.status(this);
+        lic.setText(lst == 0 ? "✅ لایسنس فعال تا " + Scheduler.jalaliDate(License.expiry(this))
+                : lst == 1 ? "🎁 دورهٔ آزمایشی — " + Scheduler.fa(String.valueOf(License.daysLeft(this))) + " روز"
+                : "⛔ لایسنس منقضی");
+        lic.setTextColor(Color.WHITE);
+        lic.setTextSize(13);
+        lic.setBackgroundColor(lst == 0 ? 0xFF12B5A5 : 0xFFE74C3C);
+        lic.setPadding(dp(12), dp(6), dp(12), dp(6));
+        box.addView(lic);
+        mkBtn("🔑 مدیریت لایسنس / ورود کد").setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { startActivity(new Intent(SettingsActivity.this, LicenseActivity.class)); }
+        });
+
         section("🔗 اتصال به بله");
         etToken = field("توکن ربات بله (از @botfather)", Cfg.token(this), "123456:ABC-DEF…", InputType.TYPE_CLASS_TEXT);
         etChat = field("آیدی عددی مقصد (مدیر یا گروه)", Cfg.chatId(this) == 0 ? "" : String.valueOf(Cfg.chatId(this)), "مثلاً 123456789", InputType.TYPE_CLASS_NUMBER);
