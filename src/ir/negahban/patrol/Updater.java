@@ -28,6 +28,8 @@ import java.net.URL;
 public class Updater {
 
     public static final String REPO = "ghahremany/negahban-yar";
+    /** فقط فایل‌های همین اپ از میان دارایی‌های انتشار (سوئیت «یار» چند APK دارد) */
+    public static final String ASSET_PREFIX = "negahban-";
     public static final String API = "https://api.github.com/repos/" + REPO + "/releases/latest";
 
     public static class Res {
@@ -67,7 +69,7 @@ public class Updater {
             JSONArray assets = j.optJSONArray("assets");
             for (int i = 0; assets != null && i < assets.length(); i++) {
                 JSONObject a = assets.getJSONObject(i);
-                if (a.optString("name", "").endsWith(".apk")) {
+                if (a.optString("name", "").startsWith(ASSET_PREFIX) && a.optString("name", "").endsWith(".apk")) {
                     r.downloadUrl = a.optString("browser_download_url", "");
                     r.size = a.optLong("size", 0);
                     break;
@@ -80,6 +82,7 @@ public class Updater {
             String local = localVersion(c);
             int cmp = compareVersions(r.tag, local);
             r.updateAvailable = cmp > 0;
+            Cfg.set(c, "forceTag", r.tag);
             r.ok = true;
         } catch (Exception e) {
             r.error = String.valueOf(e);
@@ -189,6 +192,16 @@ public class Updater {
                 a.startActivity(i);
             } catch (Exception ignored) {}
         }
+    }
+
+    /** --- به‌روزرسانی اجباری: کش نتیجهٔ آخرین چک --- */
+    public static void setForce(Context c, boolean needed) {
+        Cfg.set(c, "forceUpdate", needed);
+    }
+
+    public static boolean forceNeeded(Context c) {
+        return Cfg.p(c).getBoolean("forceUpdate", false)
+                && compareVersions(localVersion(c), Cfg.p(c).getString("forceTag", "")) < 0;
     }
 
     /** فاصلهٔ زمانی چک خودکار: یک‌بار در شبانه‌روز */

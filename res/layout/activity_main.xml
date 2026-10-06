@@ -231,12 +231,9 @@
         <TextView android:id="@+id/dSearchRes" style="@style/DrawerItem" android:text="🔎  جستجوی ساکنین"/>
         <TextView android:id="@+id/dGuests" style="@style/DrawerItem" android:text="🚶  ورود مهمان"/>
         <TextView android:id="@+id/dPackages" style="@style/DrawerItem" android:text="📦  دریافت بسته"/>
-        <TextView android:id="@+id/dMembers" style="@style/DrawerItem" android:text="✅  تأیید اعضا"/>
         <TextView android:id="@+id/dManage" style="@style/DrawerItem" android:text="📊  پنل مدیریت"/>
         <TextView android:id="@+id/dGuards" style="@style/DrawerItem" android:text="👤  نگهبان‌ها و شیفت"/>
-        <TextView android:id="@+id/dResAdmin" style="@style/DrawerItem" android:text="👥  مدیریت ساکنین"/>
         <TextView android:id="@+id/dSettings" style="@style/DrawerItem" android:text="⚙️  تنظیمات"/>
-        <TextView android:id="@+id/dPrint" style="@style/DrawerItem" android:text="🖨️  چاپ پلاک‌ها"/>
         <TextView android:id="@+id/dLock" style="@style/DrawerItem" android:text="🔒  قفل گوشی (حالت کشو)"/>
         <TextView android:id="@+id/dSync" style="@style/DrawerItem" android:text="🔄  ارسال صف به بله"/>
 

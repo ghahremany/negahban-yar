@@ -84,9 +84,13 @@ public class GuestActivity extends Activity {
                 if (name.isEmpty()) { toast("نام مهمان لازم است"); return; }
                 String nid = eNid.getText().toString().trim();
                 if (!nid.isEmpty() && nid.length() != 10) { toast("کد ملی باید ۱۰ رقم باشد"); return; }
+                long gts = PatrolStore.now();
                 PatrolStore st = new PatrolStore(GuestActivity.this);
-                st.addGuestTs(PatrolStore.now(), name, mobile,
+                st.addGuestTs(gts, name, mobile,
                         ePlate.getText().toString().trim(), nid, 0);
+                // خبر ماشینی برای مدیر یار
+                st.enq("NGHQ|GUEST_IN|" + gts + "|" + name + "|" + mobile + "|"
+                        + ePlate.getText().toString().trim() + "|" + nid);
                 st.close();
                 eName.setText(""); eMobile.setText(""); ePlate.setText(""); eNid.setText("");
                 toast("ورود ثبت شد ✅");

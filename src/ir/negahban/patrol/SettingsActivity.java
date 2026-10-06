@@ -71,6 +71,11 @@ public class SettingsActivity extends Activity {
             @Override public void onClick(View v) { sendTest(); }
         });
 
+        section("👥 دفتر ساکنین");
+        mkBtn("📥 دریافت دفتر ساکنین (فایل از مدیر یار)").setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { importResidents(); }
+        });
+
         section("🏢 ساختمان و ایستگاه‌ها");
         etBuilding = field("نام ساختمان", Cfg.building(this), null, InputType.TYPE_CLASS_TEXT);
         TextView lbl = new TextView(this);
@@ -107,10 +112,7 @@ public class SettingsActivity extends Activity {
         cbWake.setText("چالش بیداری تصادفی فعال باشد");
         box.addView(cbWake);
 
-        cbBot = new CheckBox(this);
-        cbBot.setText("🤖 ربات ساکنین فعال باشد (پاسخگویی در بله: بسته‌ها و عضویت)");
-        cbBot.setChecked(Cfg.botEnabled(this));
-        box.addView(cbBot);
+        // ربات ساکنین روی «مدیر یار» اجرا می‌شود — اینجا فقط پیام می‌فرستیم
         TextView botNote = new TextView(this);
         botNote.setText("با فعال بودن، یک اعلان ثابت «ربات فعال» در گوشی دیده می‌شود و مصرف باتری کمی بیشتر است. تأیید عضویت‌ها: منوی ☰ → ✅ تأیید اعضا");
         botNote.setTextSize(12);
@@ -127,34 +129,6 @@ public class SettingsActivity extends Activity {
         mkBtn("🏷️ امضای پلاک‌ها (برای چاپ)").setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { showSigs(); }
         });
-        mkBtn("🖨️ چاپ پلاک‌ها (پرینتر یا PDF)").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (collectStations().isEmpty()) { toast("اول ایستگاه‌ها را وارد کن"); return; }
-                toast("دیالوگ چاپ اندروید باز می‌شود…");
-                PlaquePrinter.print(SettingsActivity.this);
-            }
-        });
-
-        section("💾 پشتیبان‌گیری و بازیابی");
-        mkBtn("📤 پشتیبان: ارسال به بله (فایل در چت مدیر)").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { backupToBale(); }
-        });
-        mkBtn("📤 پشتیبان: ذخیرهٔ فایل در حافظهٔ گوشی").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { backupToLocal(); }
-        });
-        mkBtn("📥 بازیابی از فایل پشتیبان").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { restoreFlow(); }
-        });
-
-        section("🔄 به‌روزرسانی");
-        mkBtn("🔄 بررسی نسخهٔ جدید از گیت‌هاب و نصب").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { UpdaterUi.run(SettingsActivity.this, false); }
-        });
-        TextView vInfo = new TextView(this);
-        vInfo.setText("نسخهٔ نصب‌شده: v" + Updater.localVersion(this) + "  —  مخزن: github.com/ghahremany/negahban-yar");
-        vInfo.setTextSize(12);
-        vInfo.setTextColor(0xFF607D8B);
-        box.addView(vInfo);
 
         section("🔋 پایداری روی گوشی");
         mkBtn("⏰ اجازهٔ هشدار دقیق (Android 12+)").setOnClickListener(new View.OnClickListener() {
@@ -179,6 +153,51 @@ public class SettingsActivity extends Activity {
         save.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { save(); }
         });
+    }
+
+    // ---------- دریافت دفتر ساکنین (فایل صادراتی مدیر یار) ----------
+
+    private void importResidents() {
+        android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
+        i.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+        i.setType("*/*");
+        try {
+            startActivityForResult(i, 95);
+        } catch (Exception e) {
+            toast("انتخاب‌گر فایل باز نشد: " + e);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int req, int res, android.content.Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req == 95 && res == RESULT_OK && data != null && data.getData() != null) {
+            try {
+                java.io.InputStream is = getContentResolver().openInputStream(data.getData());
+                String json = Backup.readStream(is);
+                is.close();
+                org.json.JSONObject o = new org.json.JSONObject(json);
+                org.json.JSONArray arr = o.optJSONArray("residents");
+                if (arr == null) { toast("فایل دفتر ساکنین نیست"); return; }
+                PatrolStore st = new PatrolStore(this);
+                st.clearRes();
+                int n = 0;
+                for (int i2 = 0; i2 < arr.length(); i2++) {
+                    org.json.JSONObject r = arr.optJSONObject(i2);
+                    if (r == null) continue;
+                    st.addRes(r.optString("name"), r.optString("mobile"), r.optString("plate"),
+                            r.optString("car"), r.optString("parking"));
+                    n++;
+                }
+                st.close();
+                new AlertDialog.Builder(this)
+                        .setTitle("دفتر ساکنین")
+                        .setMessage(Scheduler.fa(String.valueOf(n)) + " ساکن از فایل مدیر خوانده و جایگزین شد ✅")
+                        .setPositiveButton("باشه", null).show();
+            } catch (Exception e) {
+                toast("خواندن فایل ناموفق: " + e);
+            }
+        }
     }
 
     // ---------- جریان تولید کلید جدید: هشدار → PIN → تولید ----------
@@ -299,14 +318,12 @@ public class SettingsActivity extends Activity {
             Cfg.set(this, "minGap", Math.max(0, Integer.parseInt(etGap.getText().toString().trim())));
             Cfg.set(this, "reportMin", hhmm2min(etReport.getText().toString()));
             Cfg.set(this, "wakeOn", cbWake.isChecked());
-            Cfg.set(this, "botEnabled", cbBot.isChecked());
             String pin = etPin.getText().toString().trim();
             if (!pin.isEmpty()) Cfg.set(this, "pin", pin);
             Cfg.set(this, "tokenInvalid", false);
 
             Cfg.set(this, "plan", "{}");
             Scheduler.ensurePlan(this);
-            if (Cfg.botEnabled(this)) BotService.start(this); else BotService.stop(this);
             toast("✅ ذخیره شد — برنامهٔ امشب قرعه کشیده شد");
         } catch (Exception e) {
             toast("خطا در ذخیره: قالب ساعت‌ها HH:MM باشد");
@@ -436,9 +453,7 @@ public class SettingsActivity extends Activity {
         }
     }
 
-    @Override
-    protected void onActivityResult(int req, int res, android.content.Intent data) {
-        super.onActivityResult(req, res, data);
+    private void onLegacyActivityResult(int req, int res, android.content.Intent data) {
         if (data == null || data.getData() == null) return;
         if (req == 91 && res == RESULT_OK) { // ذخیرهٔ لوکال
             try {

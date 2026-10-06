@@ -119,13 +119,15 @@ public class PackageActivity extends Activity {
         final long id = st.addPackageTs(PatrolStore.now(), kind, barcode, name, mobile, block, "PENDING");
         st.close();
 
-        // ۲) خبر در بله (همیشه — تاریخچه + پشتیبان)
+        // ۲) خبر در بله — خط ماشینی برای مدیر یار + متن خوانا
+        long ts = PatrolStore.now();
         PatrolStore q = new PatrolStore(this);
+        q.enq("NGHQ|PKG|" + ts + "|" + kind + "|" + barcode + "|" + name + "|" + mobile + "|" + block);
         q.enq("📦 بسته ثبت شد\n👤 گیرنده: " + name
                 + (block.isEmpty() ? "" : "\n🏢 بلوک: " + block)
                 + "\n📦 نوع: " + kind
                 + (barcode.isEmpty() ? "" : "\n🔖 بارکد: " + barcode)
-                + "\n🕐 " + Scheduler.jalaliDate(PatrolStore.now()) + " — " + Scheduler.fa(Scheduler.hm(PatrolStore.now())));
+                + "\n🕐 " + Scheduler.jalaliDate(ts) + " — " + Scheduler.fa(Scheduler.hm(ts)));
         q.close();
 
         // ۳) پیامک به گیرنده

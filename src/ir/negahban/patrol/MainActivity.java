@@ -32,7 +32,13 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         CrashCatcher.install(this);
-        // گیت لایسنس: بدون لایسنس معتبر/آزمایشی → صفحهٔ لایسنس
+        // گیت ۱: به‌روزرسانی اجباری
+        if (Updater.forceNeeded(this)) {
+            startActivity(new Intent(this, ForceUpdateActivity.class));
+            finish();
+            return;
+        }
+        // گیت ۲: لایسنس: بدون لایسنس معتبر/آزمایشی → صفحهٔ لایسنس
         if (License.status(this) == 2) {
             startActivity(new Intent(this, LicenseActivity.class));
             finish();
@@ -52,7 +58,7 @@ public class MainActivity extends Activity {
         cardGuard.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { askPinGuard(); }
         });
-        drawerSub.setText(Cfg.building(this) + " • نسخهٔ ۱٫۱ • بدون سرور");
+        drawerSub.setText(Cfg.building(this) + " • نسخهٔ ۲٫۰ • بدون سرور");
 
         // اول از همه منو را بیرونِ صفحه بگذار تا موقع باز شدن انیمیشن داشته باشد
         drawer.post(new Runnable() {
@@ -107,15 +113,9 @@ public class MainActivity extends Activity {
                 } else if (id == R.id.dGuards) {
                     closeDrawer();
                     askPinGuard();
-                } else if (id == R.id.dResAdmin) {
-                    closeDrawer();
-                    askPinRes();
                 } else if (id == R.id.dSettings) {
                     closeDrawer();
                     askPin();
-                } else if (id == R.id.dPrint) {
-                    closeDrawer();
-                    askPinPrint();
                 } else if (id == R.id.dLock) {
                     closeDrawer();
                     Toast.makeText(MainActivity.this, "برای برداشتن قفل: دکمهٔ بازگشت + مرور برنامه‌ها را همزمان نگه دارید", Toast.LENGTH_LONG).show();
@@ -126,9 +126,6 @@ public class MainActivity extends Activity {
                     new Thread(new Runnable() {
                         @Override public void run() { Sync.drain(MainActivity.this); }
                     }).start();
-                } else if (id == R.id.dMembers) {
-                    closeDrawer();
-                    askPinMembers();
                 } else if (id == R.id.dUpdate) {
                     closeDrawer();
                     UpdaterUi.run(MainActivity.this, false);
@@ -141,7 +138,7 @@ public class MainActivity extends Activity {
                 }
             }
         };
-        int[] items = {R.id.dHome, R.id.dScan, R.id.dSearchRes, R.id.dGuests, R.id.dPackages, R.id.dMembers, R.id.dManage, R.id.dGuards, R.id.dResAdmin, R.id.dSettings, R.id.dPrint, R.id.dLock, R.id.dSync, R.id.dUpdate, R.id.dPage, R.id.dDev};
+        int[] items = {R.id.dHome, R.id.dScan, R.id.dSearchRes, R.id.dGuests, R.id.dPackages, R.id.dManage, R.id.dGuards, R.id.dSettings, R.id.dLock, R.id.dSync, R.id.dUpdate, R.id.dPage, R.id.dDev};
         for (int it : items) findViewById(it).setOnClickListener(nav);
     }
 
@@ -334,6 +331,11 @@ public class MainActivity extends Activity {
         }).start();
         maybeShowCrash();
         maybeAutoUpdate();
+        if (Updater.forceNeeded(this)) {
+            startActivity(new Intent(this, ForceUpdateActivity.class));
+            finish();
+            return;
+        }
         // اگر لایسنس وسط کار تمام شد
         if (License.status(this) == 2) {
             startActivity(new Intent(this, LicenseActivity.class));
@@ -351,15 +353,26 @@ public class MainActivity extends Activity {
                 Updater.Res r = Updater.check(MainActivity.this);
                 if (r.ok) {
                     Updater.markChecked(MainActivity.this);
+                    Updater.setForce(MainActivity.this, r.updateAvailable);
                     if (r.updateAvailable) {
                         runOnUiThread(new Runnable() {
                             @Override public void run() {
-                                try { UpdaterUi.run(MainActivity.this, true); } catch (Exception ignored) {}
+                                try {
+                                    startActivity(new Intent(MainActivity.this, ForceUpdateActivity.class));
+                                    finish();
+                                } catch (Exception ignored) {}
                             }
                         });
+                        return;
                     }
                 }
-                // خطا در حالت خودکار بی‌صدا
+                // پوش نوتیفیکیشن سازنده
+                final PushFeed.Item p = PushFeed.fetchUnseen(MainActivity.this, "negahban");
+                if (p != null) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() { try { PushFeed.show(MainActivity.this, p); } catch (Exception ignored) {} }
+                    });
+                }
             }
         }).start();
     }

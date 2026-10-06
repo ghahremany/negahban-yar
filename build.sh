@@ -60,7 +60,7 @@ if [ ! -f "$KS" ]; then
     -dname "CN=Negahban Patrol" >/dev/null 2>&1
 fi
 
-OUT="$PROJ/negahban-v1.1.apk"
+OUT="$PROJ/negahban-v2.0.apk"
 "$BT/apksigner" sign --ks "$KS" --ks-key-alias negahban \
   --ks-pass pass:negahban123 --key-pass pass:negahban123 \
   --out "$OUT" "$B/aligned.apk"
