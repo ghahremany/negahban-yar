@@ -16,6 +16,12 @@ public class ForceUpdateActivity extends Activity {
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
+        buildUi();
+        // فرار از گیت اشتباه: اگر با بررسی تازه معلوم شد آپدیت واقعی برای این اپ نیست، رد شو
+        verify();
+    }
+
+    private void buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setGravity(Gravity.CENTER);
@@ -50,7 +56,7 @@ public class ForceUpdateActivity extends Activity {
         Button go = new Button(this);
         go.setText("⬇️ دانلود و نصب نسخهٔ جدید");
         go.setTextColor(Color.WHITE);
-        go.setBackgroundResource(ir.negahban.patrol.R.drawable.btn_primary);
+        go.setBackgroundResource(R.drawable.btn_primary);
         go.setAllCaps(false);
         go.setTextSize(16);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(54));
@@ -59,7 +65,6 @@ public class ForceUpdateActivity extends Activity {
         go.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) {
                 UpdaterUi.run(ForceUpdateActivity.this, false);
-                // بعد از بستهشدن دیالوگ دوباره چک میکنیم؛ اگر نصب شد، این اکتیویتی دیگر باز نمیشود
             }
         });
         root.addView(go);
@@ -70,6 +75,26 @@ public class ForceUpdateActivity extends Activity {
         note.setTextColor(0x80FFFFFF);
         note.setPadding(0, dp(14), 0, 0);
         root.addView(note);
+    }
+
+    /** بررسی تازه: اگر آپدیت واقعی برای این اپ نبود، گیت را بردار و برگرد */
+    private void verify() {
+        new Thread(new Runnable() {
+            @Override public void run() {
+                final Updater.Res r = Updater.check(ForceUpdateActivity.this);
+                if (r.ok && !r.updateAvailable) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() {
+                            try {
+                                Updater.setForce(ForceUpdateActivity.this, false);
+                                startActivity(new android.content.Intent(ForceUpdateActivity.this, MainActivity.class));
+                                finish();
+                            } catch (Exception ignored) {}
+                        }
+                    });
+                }
+            }
+        }).start();
     }
 
     private int dp(int v) { return (int) (v * getResources().getDisplayMetrics().density); }

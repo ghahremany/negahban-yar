@@ -32,6 +32,8 @@ public class Updater {
     public static final String ASSET_PREFIX = "negahban-";
     public static final String API = "https://api.github.com/repos/" + REPO + "/releases/latest";
 
+    private static String assetName = "";
+
     public static class Res {
         public boolean ok;
         public boolean updateAvailable;
@@ -69,25 +71,45 @@ public class Updater {
             JSONArray assets = j.optJSONArray("assets");
             for (int i = 0; assets != null && i < assets.length(); i++) {
                 JSONObject a = assets.getJSONObject(i);
-                if (a.optString("name", "").startsWith(ASSET_PREFIX) && a.optString("name", "").endsWith(".apk")) {
+                String n = a.optString("name", "");
+                if (n.startsWith(ASSET_PREFIX) && n.endsWith(".apk")) {
                     r.downloadUrl = a.optString("browser_download_url", "");
                     r.size = a.optLong("size", 0);
+                    assetName = n;
                     break;
                 }
             }
             if (r.downloadUrl.isEmpty()) {
-                r.error = "فایل APK در انتشار پیدا نشد";
+                // در این انتشار فایلی برای این اپ نبود → بدون تغییر
+                r.updateAvailable = false;
+                r.ok = true;
                 return r;
             }
+            // نسخهٔ هر اپ از نام فایل خودش خوانده میشود (تگ انتشار مشترک سوئیت است)
+            // مثال: modir-v1.0.1.apk → «1.0.1»
+            String av = versionFromAsset(assetName, ASSET_PREFIX);
+            if (av == null || av.isEmpty()) av = r.tag;
+            r.tag = av; // نمایش «نسخهٔ جدید» همان نسخهٔ فایل این اپ است
             String local = localVersion(c);
-            int cmp = compareVersions(r.tag, local);
+            int cmp = compareVersions(av, local);
             r.updateAvailable = cmp > 0;
-            Cfg.set(c, "forceTag", r.tag);
+            Cfg.set(c, "forceTag", av);
             r.ok = true;
         } catch (Exception e) {
             r.error = String.valueOf(e);
         }
         return r;
+    }
+
+    /** «modir-v1.0.1.apk» با پیشوند «modir-» → «1.0.1» */
+    static String versionFromAsset(String name, String prefix) {
+        try {
+            String v = name.replace(prefix, "").replace(".apk", "").trim();
+            if (v.startsWith("v") || v.startsWith("V")) v = v.substring(1);
+            return v.trim();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static String localVersion(Context c) {
