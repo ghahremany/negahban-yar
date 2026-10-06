@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نگهبان‌یار — سامانهٔ گشت شبانهٔ QR با گزارش خودکار در بله</title>
+<meta name="description" content="نگهبان‌یار: نظارت هوشمند گشت شبانهٔ نگهبان با پلاک‌های QR امضاشده و گزارش خودکار در پیام‌رسان بله — بدون سرور، بدون هزینهٔ ماهانهٔ هاستینگ.">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Tahoma,"Vazirmatn",sans-serif;background:#f4f7f9;color:#1c2b33;line-height:1.9}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 18px}
+  /* هدر */
+  header{background:linear-gradient(135deg,#0a2c40 0%,#0f3d56 55%,#116e63 100%);color:#fff;padding:26px 0 90px;position:relative}
+  nav{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+  .brand{font-size:21px;font-weight:bold}
+  .brand small{opacity:.75;font-weight:normal;font-size:12px;display:block}
+  nav a{color:#cfe8f5;text-decoration:none;font-size:14px;margin-inline-start:16px}
+  nav a:hover{color:#fff}
+  .hero{text-align:center;padding-top:46px}
+  .hero h1{font-size:40px;line-height:1.5}
+  .hero p{font-size:18px;opacity:.92;max-width:640px;margin:14px auto 26px}
+  .cta{display:inline-block;background:#12b5a5;color:#fff;text-decoration:none;font-size:17px;font-weight:bold;padding:13px 34px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+  .cta:hover{background:#0fa093}
+  .cta.ghost{background:transparent;border:1.5px solid rgba(255,255,255,.6);margin-inline-start:10px;box-shadow:none}
+  .badge-row{margin-top:26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:5px 16px;font-size:13px}
+  /* شناور نسخه‌ها */
+  .float{margin-top:-62px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+  .float .f{background:#fff;border-radius:16px;padding:18px;text-align:center;box-shadow:0 8px 26px rgba(15,61,86,.12)}
+  .float .f b{display:block;font-size:16px;color:#0f3d56}
+  .float .f span{font-size:13px;color:#607d8b}
+  .float .ico{font-size:30px}
+  /* بخش‌ها */
+  section{padding:56px 0}
+  h2{font-size:27px;color:#0f3d56;text-align:center;margin-bottom:8px}
+  .lead{text-align:center;color:#607d8b;max-width:640px;margin:0 auto 34px;font-size:15px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .card{background:#fff;border-radius:16px;padding:22px;box-shadow:0 3px 14px rgba(15,61,86,.07)}
+  .card h3{color:#0f3d56;font-size:17px;margin-bottom:8px}
+  .card p{font-size:14px;color:#455a64}
+  .card .ico{font-size:26px;margin-bottom:8px;display:block}
+  /* مراحل */
+  .steps{counter-reset:st;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+  .step{background:#fff;border-radius:16px;padding:22px;position:relative;box-shadow:0 3px 14px rgba(15,61,86,.07)}
+  .step::before{counter-increment:st;content:counter(st);position:absolute;top:-16px;inset-inline-start:20px;width:34px;height:34px;background:#12b5a5;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold}
+  .step h3{color:#0f3d56;font-size:16px;margin:6px 0}
+  .step p{font-size:13.5px;color:#455a64}
+  /* ضدتقلب */
+  .dark{background:#0f3d56;color:#fff;border-radius:22px;padding:38px 30px}
+  .dark h2{color:#fff}
+  .dark .lead{color:#b8d4e3}
+  .chk{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px;margin-top:18px}
+  .chk div{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px 14px;font-size:14px}
+  /* پلن‌ها */
+  .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px;max-width:760px;margin:0 auto}
+  .plan{background:#fff;border-radius:18px;padding:26px;text-align:center;box-shadow:0 3px 14px rgba(15,61,86,.07);border:1.5px solid #e3ecf1}
+  .plan.best{border-color:#12b5a5;box-shadow:0 10px 28px rgba(18,181,165,.18)}
+  .plan .tag{background:#12b5a5;color:#fff;font-size:11px;border-radius:999px;padding:3px 12px;display:inline-block;margin-bottom:10px}
+  .plan h3{color:#0f3d56;font-size:19px}
+  .price{font-size:26px;font-weight:bold;color:#116e63;margin:10px 0 2px}
+  .plan small{color:#90a4ae}
+  .plan ul{list-style:none;margin:14px 0;font-size:13.5px;color:#455a64}
+  .plan li{padding:5px 0}
+  .btn2{display:inline-block;background:#0f3d56;color:#fff;text-decoration:none;padding:10px 26px;border-radius:10px;font-size:14px;font-weight:bold}
+  .btn2:hover{background:#116e63}
+  /* سوالات */
+  details{background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:10px;box-shadow:0 2px 8px rgba(15,61,86,.06)}
+  summary{cursor:pointer;font-weight:bold;color:#0f3d56}
+  details p{font-size:14px;color:#455a64;padding-top:8px}
+  /* دعوت پایانی */
+  .final{text-align:center}
+  .final .cta{margin-top:16px}
+  footer{background:#0a2c40;color:#9fc1d4;text-align:center;padding:26px 0;font-size:13px}
+  footer a{color:#12b5a5;text-decoration:none}
+  @media(max-width:600px){.hero h1{font-size:29px}.hero p{font-size:15px}nav a{margin-inline-start:10px;font-size:13px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="brand">🛡 نگهبان‌یار<small>نگهبانی هوشمند، خیالت راحت</small></div>
+      <div>
+        <a href="#features">امکانات</a>
+        <a href="#how">چطور کار می‌کند؟</a>
+        <a href="#plans">لایسنس</a>
+        <a href="#download">دانلود</a>
+      </div>
+    </nav>
+    <div class="hero">
+      <h1>گشتِ شبانهٔ نگهبان، دیگر قابل انکار نیست</h1>
+      <p>نگهبان‌یار با پلاک‌های QR امضاشده، ساعت گشت را قرعه‌کشی می‌کند، هر ایستگاه را ثبت و تأیید می‌کند و صبحِ همان روز گزارش کامل را در پیام‌رسان <b>بله</b> به مدیر می‌رساند — <b>بدون سرور و بدون هزینهٔ ماهانهٔ هاستینگ</b>.</p>
+      <a class="cta" href="#download">📥 دانلود رایگان نسخهٔ آزمایشی</a>
+      <a class="cta ghost" href="#how">چطور کار می‌کند؟</a>
+      <div class="badge-row">
+        <span class="pill">📴 بدون سرور</span>
+        <span class="pill">💬 گزارش در بله</span>
+        <span class="pill">🔐 امضای رمزنگاری‌شده</span>
+        <span class="pill">🇮🇷 کاملاً فارسی</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="float">
+    <div class="f"><span class="ico">🎲</span><b>گشت قرعه‌کشی‌شده</b><span>ساعت گشت هر شب تصادفی است؛ نگهبان نمی‌داند کِی زنگ می‌خورد</span></div>
+    <div class="f"><span class="ico">📶</span><b>کار آفلاین</b><span>قطعی اینترنت هم اسکن‌ها را از بین نمی‌برد</span></div>
+    <div class="f"><span class="ico">🤖</span><b>ربات ساکنین در بله</b><span>اهالی خودشان بسته‌ها را چک و عضویت ثبت می‌کنند</span></div>
+    <div class="f"><span class="ico">💸</span><b>هزینهٔ ماهانهٔ صفر</b><span>نیازی به هاست، دامنه یا سرور نیست</span></div>
+  </div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <h2>همهٔ آنچه یک ساختمان نیاز دارد</h2>
+    <p class="lead">از نظارت گشت شبانه تا مدیریت بسته‌ها و مهمان‌ها — همه در یک اپ سبک (زیر ۱ مگابایت) روی یک گوشی اندرویدی معمولی.</p>
+    <div class="grid">
+      <div class="card"><span class="ico">📷</span><h3>ثبت گشت با QR امضاشده</h3><p>هر ایستگاه یک پلاک QR با امضای رمزنگاری‌شده دارد؛ پلاک جعلی یا عکس‌گرفته‌شده پذیرفته نمی‌شود و در گزارش پرچم می‌خورد.</p></div>
+      <div class="card"><span class="ico">🎲</span><h3>پنجرهٔ گشت تصادفی</h3><p>هر شب ساعت گشت و ترتیب ایستگاه‌ها قرعه کشیده می‌شود؛ الگوی ثابت یعنی فرصت خوابیدن — نگهبان‌یار این فرصت را می‌گیرد.</p></div>
+      <div class="card"><span class="ico">📋</span><h3>گزارش خودکار ۰۷:۰۰ در بله</h3><p>صبح‌ها گزارش کامل به چت مدیر یا گروه ساختمان می‌رود: گشت‌های کامل/ناقص، ساعت هر ایستگاه، پرچم‌های مشکوک.</p></div>
+      <div class="card"><span class="ico">⏰</span><h3>چالش بیداری</h3><p>یک‌بار در شب، ربات عددی تصادفی نشان میدهد و ۹۰ ثانیه مهلت پاسخ میدهد — نگهبانِ خوابیده جوابی ندارد.</p></div>
+      <div class="card"><span class="ico">📊</span><h3>تقویم شمسیِ رنگی</h3><p>هر شب سبز (سالم) یا قرمز (مشکل‌دار) ثبت می‌شود؛ مدیر با یک نگاه عملکرد ماه را می‌بیند و گزارش هر شب را دوباره می‌فرستد.</p></div>
+      <div class="card"><span class="ico">🤖</span><h3>ربات ساکنین</h3><p>اهالی در بله «بسته» مینویسند تا بسته‌های در انتظار را ببینند؛ ثبت‌نام با تأیید مدیر انجام می‌شود.</p></div>
+      <div class="card"><span class="ico">📦</span><h3>مدیریت بسته و مهمان</h3><p>ثبت بسته با بارکد پستی + پیامک خودکار به گیرنده؛ ثبت ورود/خروج مهمان با کد ملی و پلاک.</p></div>
+      <div class="card"><span class="ico">👥</span><h3>دفتر ساکنین</h3><p>نام، همراه، پلاک، خودرو و پارکینگ هر ساکن — با جستجوی سریع برای نگهبان.</p></div>
+      <div class="card"><span class="ico">💾</span><h3>پشتیبان در بله</h3><p>یک ضربه: کل اطلاعات به‌صورت فایل در چت مدیر ذخیره میشود؛ تعویض گوشی = بازیابی چند ثانیه‌ای.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="background:#e9f2f6">
+  <div class="wrap">
+    <h2>در سه قدم راه می‌افتد</h2>
+    <p class="lead">بدون سرور، بدون کابل‌کشی، بدون نصب روی هر گوشی — فقط یک گوشی اندرویدی معمولی در پست نگهبانی.</p>
+    <div class="steps">
+      <div class="step"><h3>اپ را نصب کن</h3><p>فایل نصب را از همین صفحه دانلود و روی گوشی نگهبانی نصب کن. ربات بله را با @BotFather بساز و توکنش را در تنظیمات وارد کن.</p></div>
+      <div class="step"><h3>پلاک‌ها را چاپ کن</h3><p>اپ خودش پلاک‌های QR امضاشده را با پرینتر یا PDF تولید می‌کند. پلاک‌ها را در ایستگاه‌های گشت (لابی، پارکینگ، پشت‌بام…) نصب کن.</p></div>
+      <div class="step"><h3>خیالت راحت باشد</h3><p>از همین شب، گشت‌ها ثبت میشوند و هر صبح ساعت ۷ گزارش کامل در بله‌ی توست. تقویم رنگی، عملکرد هر شب را یک‌نگاهی نشان میدهد.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="dark">
+      <h2>🔐 ضدتقلب، لایه‌به‌لایه</h2>
+      <p class="lead">نگهبان‌یار برای «جلب اعتماد» ساخته شده، نه فقط ثبت. این‌ها همان قفل‌هایی هستند که تقلب‌های رایج را می‌بندند:</p>
+      <div class="chk">
+        <div>🎲 ساعت گشت هر شب قرعه کشیده می‌شود</div>
+        <div>🔀 ترتیب ایستگاه‌ها قدم‌به‌قدم اعلام میشود</div>
+        <div>⏱ حداقل فاصلهٔ زمانی بین دو ایستگاه کنترل میشود</div>
+        <div>🔑 هر پلاک امضای HMAC دارد؛ پلاک جعلی فوراً لو میرود</div>
+        <div>⏰ ساعت گوشی با ساعت بله سنجیده میشود؛ دست‌کاری پرچم میخورد</div>
+        <div>⛓ رکوردها زنجیره‌ای امضا میشوند؛ حذف رکورد در گزارش آشکار میشود</div>
+        <div>⏰ چالش بیداری تصادفی با مهلت ۹۰ ثانیه</div>
+        <div>🔒 تنظیمات با PIN مدیر قفل است</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="plans" style="background:#e9f2f6">
+  <div class="wrap">
+    <h2>لایسنس استفاده</h2>
+    <p class="lead">نسخهٔ آزمایشی ۱۴ روزه رایگان است. برای استفادهٔ دائمی، لایسنس ماهانه یا سالانه از توسعه‌دهنده تهیه می‌شود و با یک کد در برنامه فعال می‌گردد — بدون نیاز به اینترنت.</p>
+    <div class="plans">
+      <div class="plan">
+        <h3>🎁 آزمایشی</h3>
+        <div class="price">رایگان</div><small>۱۴ روز</small>
+        <ul>
+          <li>تمام امکانات</li>
+          <li>بدون نیاز به کارت بانکی</li>
+          <li>مناسب برای تست در ساختمان شما</li>
+        </ul>
+        <a class="btn2" href="#download">شروع کن</a>
+      </div>
+      <div class="plan">
+        <h3>📅 ماهانه</h3>
+        <div class="price">ماهانه</div><small>پرداخت هر ماه</small>
+        <ul>
+          <li>تمام امکانات برای یک ساختمان</li>
+          <li>فعال‌سازی با کد یک‌خطی</li>
+          <li>پشتیبانی پیام‌رسان</li>
+        </ul>
+        <a class="btn2" href="tel:09127285065">📞 سفارش</a>
+      </div>
+      <div class="plan best">
+        <span class="tag">اقتصادی‌تر</span>
+        <h3>🗓 سالانه</h3>
+        <div class="price">سالانه</div><small>یک پرداخت در سال</small>
+        <ul>
+          <li>تمام امکانات برای یک ساختمان</li>
+          <li>به‌روزرسانی‌های رایگان</li>
+          <li>اولویت پشتیبانی</li>
+        </ul>
+        <a class="btn2" href="tel:09127285065">📞 سفارش</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <h2>دانلود</h2>
+    <p class="lead">برای اندروید ۷٫۱ به بالا — نصب مستقیم فایل، بدون نیاز به گوگل‌پلی. به‌روزرسانی‌ها خودکار از همین صفحه چک می‌شوند.</p>
+    <div class="final">
+      <a class="cta" href="https://github.com/ghahremany/negahban-yar/releases/latest">📥 دانلود آخرین نسخه (APK)</a>
+      <p style="margin-top:16px;color:#607d8b;font-size:13px">مخزن کد و تاریخچهٔ نسخه‌ها: <a href="https://github.com/ghahremany/negahban-yar" style="color:#116e63">github.com/ghahremany/negahban-yar</a></p>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <h2>سوالات پرتکرار</h2>
+    <p class="lead"></p>
+    <details><summary>اگر اینترنت قطع شود چه می‌شود؟</summary><p>هیچ چیز از دست نمیرود. اسکن‌ها روی گوشی نگهبانی ذخیره می‌شوند و با اولین اتصال، گزارش‌ها به بله می‌روند. تنها تفاوت: پیام‌ها به‌جای «همان لحظه»، «به محض وصل شدن» می‌رسند.</p></details>
+    <details><summary>نگهبان می‌تواند گزارش جعل کند؟</summary><p>به‌صورت واقع‌بینانه: نه. ساعت گشت تصادفی است، ترتیب ایستگاه‌ها را اپ اعلام می‌کند، پلاک‌ها امضای رمزنگاری‌شده دارند، فاصلهٔ زمانی بین اسکن‌ها کنترل میشود و ساعت گوشی با ساعت بله مقایسه میشود. به‌روزرسانی صادقانه: در برابر یک متخصص با گوشی روت‌شده هیچ سیستم QR‌ای ضمانت مطلق ندارد.</p></details>
+    <details><summary>روی گوشیِ شخصیِ نگهبان هم نصب می‌شود؟</summary><p>بله، اما پیشنهاد ما یک گوشی سادهٔ اختصاصی ساختمان در پست نگهبانی است — هم قوی‌تر از نظر ضدتقلب است، هم نگهبان به گوشی شخصی‌اش وابسته نمیماند.</p></details>
+    <details><summary>هزینهٔ سرور یا هاستینگ دارد؟</summary><p>خیر. نگهبان‌یار از اول طراحی شد که بدون سرور کار کند؛ گوشی نگهبانی خودش نقش سرور را بازی می‌کند. تنها هزینه، لایسنس استفاده است.</p></details>
+    <details><summary>چطور لایسنس تهیه کنم؟</summary><p>با شمارهٔ ۰۹۱۲۷۲۸۵۰۶۵ تماس بگیر. کد فعال‌سازی یک‌خطی را دریافت می‌کنی که در خود برنامه وارد میشود و اعتبارش (ماهانه/سالانه) همان‌جا نمایش داده میشود.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <b style="color:#fff">نگهبان‌یار</b> — سامانهٔ گشت شبانهٔ QR با گزارش در پیام‌رسان بله<br>
+    توسعه و پشتیبانی: محمد جواد قهرمانی • <a href="tel:09127285065">۰۹۱۲۷۲۸۵۰۶۵</a> • <a href="https://github.com/ghahremany/negahban-yar">GitHub</a><br>
+    © تمامی حقوق این نرم‌افزار برای توسعه‌دهندهٔ آن محفوظ است.
+  </div>
+</footer>
+
+</body>
+</html>
