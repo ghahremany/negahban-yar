@@ -511,7 +511,7 @@
             var nm=assets[j].name||'';
             if(nm.indexOf(pref+'-v')===0 && nm.slice(-4)==='.apk'){
               el.setAttribute('href','https://github.com/ghahremany/negahban-yar/releases/download/'+d.tag_name+'/'+nm);
-              el.textContent=el.textContent.replace(/v[\d.]+/, nm.slice(pref.length+2).replace('.apk',''));
+              el.textContent=el.textContent.replace(/v[\d.]+/, 'v'+nm.slice(pref.length+2).replace('.apk',''));
               break;
             }
           }
