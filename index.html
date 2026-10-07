@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>سوئیت «یار» — نگهبان‌یار، مدیر یار، ساکن‌یار | مدیریت هوشمند ساختمان</title>
 <meta name="description" content="سوئیت «یار»: نگهبان‌یار (گشت شبانهٔ QR)، مدیر یار (داشبورد ساختمان) و ساکن‌یار (اپ اهالی) — متصل به هاب اختصاصی ساختمان، با گزارش خودکار و پشتیبان ابری.">
 <meta name="theme-color" content="#0A2C40">
@@ -493,6 +494,30 @@
       });
     }, {threshold:.12});
     for (var i=0;i<els.length;i++) io.observe(els[i]);
+  })();
+
+  /* لینک‌های دانلود همیشه از آخرین ریلیز گیت‌هاب تازه می‌شوند — هرگز 404 نمی‌دهند */
+  (function(){
+    try{
+      fetch('https://api.github.com/repos/ghahremany/negahban-yar/releases/latest').then(function(r){return r.json();}).then(function(d){
+        var assets=(d&&d.assets)||[];
+        if(!assets.length) return;
+        var links=document.querySelectorAll('a.apk[href*="/download/"]');
+        for(var i=0;i<links.length;i++){
+          var el=links[i];
+          var cur=(el.getAttribute('href')||'').split('/').pop();
+          var pref=cur.split('-v')[0];
+          for(var j=0;j<assets.length;j++){
+            var nm=assets[j].name||'';
+            if(nm.indexOf(pref+'-v')===0 && nm.slice(-4)==='.apk'){
+              el.setAttribute('href','https://github.com/ghahremany/negahban-yar/releases/download/'+d.tag_name+'/'+nm);
+              el.textContent=el.textContent.replace(/v[\d.]+/, nm.slice(pref.length+2).replace('.apk',''));
+              break;
+            }
+          }
+        }
+      }).catch(function(){});
+    }catch(e){}
   })();
 </script>
 </body>
