@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ساخت APK «نگهبان گشت» بدون Gradle — قابل اجرای مجدد در هر محیط لینوکس
+# ساخت APK «نگهبان‌یار» بدون Gradle — قابل اجرای مجدد در هر محیط لینوکس
 # نیازمندی‌ها: java (JDK 11+)، curl، unzip، zip — بقیه خودش دانلود می‌کند
 set -euo pipefail
 
@@ -25,7 +25,7 @@ if [ ! -x "$BT/aapt2" ] || [ ! -f "$AJ" ] || [ ! -f "$ZX" ]; then
 fi
 
 export PATH="/usr/lib/jvm/jdk-11/bin:$PATH"
-command -v java >/dev/null
+command -v java >/dev/null || { echo "java نصب نیست"; exit 1; }
 
 B="$PROJ/build"
 rm -rf "$B"
@@ -60,7 +60,7 @@ if [ ! -f "$KS" ]; then
     -dname "CN=Negahban Patrol" >/dev/null 2>&1
 fi
 
-OUT="$PROJ/negahban-v1.0.1.apk"
+OUT="$PROJ/negahban-v2.4.12.apk"
 "$BT/apksigner" sign --ks "$KS" --ks-key-alias negahban \
   --ks-pass pass:negahban123 --key-pass pass:negahban123 \
   --out "$OUT" "$B/aligned.apk"

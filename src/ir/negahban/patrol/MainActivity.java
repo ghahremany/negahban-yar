@@ -28,10 +28,23 @@ public class MainActivity extends Activity {
     LinearLayout drawer;
     boolean drawerOpen = false;
 
+    /** سرویس وقتی این true است اعلان سیستمی نمی‌دهد (اپ خودش صدا می‌زند) */
+    public static volatile boolean uiVisible = false;
+    private final android.os.Handler notifHandler = new android.os.Handler();
+    private Runnable notifTicker;
+    private boolean chimed = false;
+
     @Override
     protected void onCreate(Bundle b) {
         super.onCreate(b);
+        try { Cfg.fixLongs(this); } catch (Exception ignored) { }
         CrashCatcher.install(this);
+        // گیت ۱: به‌روزرسانی اجباری
+        if (Updater.forceNeeded(this)) {
+            startActivity(new Intent(this, ForceUpdateActivity.class));
+            finish();
+            return;
+        }
         setContentView(R.layout.activity_main);
         tvStatus = findViewById(R.id.tvStatus);
         tvPlan = findViewById(R.id.tvPlan);
@@ -46,7 +59,19 @@ public class MainActivity extends Activity {
         cardGuard.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { askPinGuard(); }
         });
-        drawerSub.setText(Cfg.building(this) + " • نسخهٔ ۱٫۰ • بدون سرور");
+        drawerSub.setText(Cfg.building(this) + " • نسخهٔ ۲٫۰");
+
+        // 🔔 زنگولهٔ اعلان‌ها + نشان تعداد ندیده‌ها
+        android.widget.FrameLayout bellBox = findViewById(R.id.bellBox);
+        final android.widget.TextView bellBadge = findViewById(R.id.bellBadge);
+        android.graphics.drawable.GradientDrawable badgeBg = new android.graphics.drawable.GradientDrawable();
+        badgeBg.setColor(0xFFE53935);
+        badgeBg.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        bellBadge.setBackground(badgeBg);
+        bellBox.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { startActivity(new Intent(MainActivity.this, NotificationsActivity.class)); }
+        });
+        updateBell();
 
         // اول از همه منو را بیرونِ صفحه بگذار تا موقع باز شدن انیمیشن داشته باشد
         drawer.post(new Runnable() {
@@ -95,21 +120,24 @@ public class MainActivity extends Activity {
                 } else if (id == R.id.dPackages) {
                     closeDrawer();
                     startActivity(new Intent(MainActivity.this, PackageActivity.class));
-                } else if (id == R.id.dManage) {
+                } else if (id == R.id.dRoofKey) {
                     closeDrawer();
-                    startActivity(new Intent(MainActivity.this, ManagementActivity.class));
+                    startActivity(new Intent(MainActivity.this, ServiceDeskActivity.class)
+                            .putExtra("kind", "ROOF").putExtra("emoji", "🔑").putExtra("title", "کلید پشت‌بام"));
+                } else if (id == R.id.dElev) {
+                    closeDrawer();
+                    startActivity(new Intent(MainActivity.this, ServiceDeskActivity.class)
+                            .putExtra("kind", "ELEV").putExtra("emoji", "🛗").putExtra("title", "آسانسور"));
+                } else if (id == R.id.dMove) {
+                    closeDrawer();
+                    startActivity(new Intent(MainActivity.this, ServiceDeskActivity.class)
+                            .putExtra("kind", "MOVE").putExtra("emoji", "🚚").putExtra("title", "اسباب‌کشی"));
                 } else if (id == R.id.dGuards) {
                     closeDrawer();
                     askPinGuard();
-                } else if (id == R.id.dResAdmin) {
-                    closeDrawer();
-                    askPinRes();
                 } else if (id == R.id.dSettings) {
                     closeDrawer();
                     askPin();
-                } else if (id == R.id.dPrint) {
-                    closeDrawer();
-                    askPinPrint();
                 } else if (id == R.id.dLock) {
                     closeDrawer();
                     Toast.makeText(MainActivity.this, "برای برداشتن قفل: دکمهٔ بازگشت + مرور برنامه‌ها را همزمان نگه دارید", Toast.LENGTH_LONG).show();
@@ -120,18 +148,19 @@ public class MainActivity extends Activity {
                     new Thread(new Runnable() {
                         @Override public void run() { Sync.drain(MainActivity.this); }
                     }).start();
-                } else if (id == R.id.dMembers) {
-                    closeDrawer();
-                    askPinMembers();
                 } else if (id == R.id.dUpdate) {
                     closeDrawer();
                     UpdaterUi.run(MainActivity.this, false);
+                } else if (id == R.id.dPage) {
+                    closeDrawer();
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(PushFeed.PAGE_URL))); }
+                    catch (Exception e) { Toast.makeText(MainActivity.this, PushFeed.PAGE_URL, Toast.LENGTH_LONG).show(); }
                 } else if (id == R.id.dDev) {
                     devDialog();
                 }
             }
         };
-        int[] items = {R.id.dHome, R.id.dScan, R.id.dSearchRes, R.id.dGuests, R.id.dPackages, R.id.dMembers, R.id.dManage, R.id.dGuards, R.id.dResAdmin, R.id.dSettings, R.id.dPrint, R.id.dLock, R.id.dSync, R.id.dUpdate, R.id.dDev};
+        int[] items = {R.id.dHome, R.id.dScan, R.id.dSearchRes, R.id.dGuests, R.id.dPackages, R.id.dRoofKey, R.id.dElev, R.id.dMove, R.id.dGuards, R.id.dSettings, R.id.dLock, R.id.dSync, R.id.dUpdate, R.id.dPage, R.id.dDev};
         for (int it : items) findViewById(it).setOnClickListener(nav);
     }
 
@@ -263,27 +292,6 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    private void askPinMembers() {
-        final EditText et = new EditText(this);
-        et.setInputType(InputType.TYPE_CLASS_NUMBER);
-        et.setHint("PIN مدیر");
-        new AlertDialog.Builder(this)
-                .setTitle("✅ تأیید اعضا")
-                .setMessage("PIN مدیر را وارد کنید")
-                .setView(et)
-                .setPositiveButton("ورود", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) {
-                        if (Cfg.pin(MainActivity.this).equals(et.getText().toString().trim())) {
-                            startActivity(new Intent(MainActivity.this, MembersActivity.class));
-                        } else {
-                            Toast.makeText(MainActivity.this, "PIN اشتباه است", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                })
-                .setNegativeButton("انصراف", null)
-                .show();
-    }
-
     private void devDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("📞 ارتباط با توسعه‌دهنده")
@@ -307,6 +315,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        super.onResume();
         try {
             Scheduler.ensurePlan(this);
         } catch (Exception e) {
@@ -324,26 +333,196 @@ public class MainActivity extends Activity {
         }).start();
         maybeShowCrash();
         maybeAutoUpdate();
-        if (Cfg.botEnabled(this)) BotService.start(this);
+        if (Updater.forceNeeded(this)) {
+            startActivity(new Intent(this, ForceUpdateActivity.class));
+            finish();
+            return;
+        }
+
+        // 🔔 چک اعلان‌ها + تیکر هر ۲۰ ثانیه
+        uiVisible = true;
+        notifCheck();
+        updateBell();
+        startNotify();
+        if (notifTicker == null) {
+            notifTicker = new Runnable() {
+                @Override public void run() { notifCheck(); updateBell(); notifHandler.postDelayed(this, 20000); }
+            };
+        }
+        notifHandler.postDelayed(notifTicker, 20000);
+    }
+
+    /** اطلاع تأیید کلید پشت‌بام از هاب: به نگهبان گفته میشود کلید را تحویل بدهد */
+    @Override
+    protected void onPause() {
+        super.onPause();
+        uiVisible = false;
+        notifHandler.removeCallbacks(notifTicker);
+    }
+
+    void notifCheck() {
+        final String code = Hub.code(this);
+        if (code.isEmpty()) return;
+        long after = Cfg.p(this).getLong("hubAfter", 0);
+        java.util.ArrayList<Hub.MsgItem> items;
+        try {
+            items = Hub.msgs(code, "negahban", after);
+        } catch (Exception e) { return; }
+        if (items.isEmpty()) return;
+        final StringBuilder sb = new StringBuilder();
+        final StringBuilder sb2 = new StringBuilder();
+        final StringBuilder sb3 = new StringBuilder();
+        final boolean[] hasNew = {false};
+        PatrolStore st = new PatrolStore(this);
+        try {
+            for (Hub.MsgItem it : items) {
+                String txt = null;
+                try {
+                    org.json.JSONObject j = new org.json.JSONObject(it.payload);
+                    if ("ROOF_KEY_OK".equals(it.kind)) {
+                        txt = "🔑 کلید پشت‌بام «" + j.optString("name", "ساکن") + "» (واحد " + j.optString("unit", "—") + ") تأیید شد — تحویل داده شود";
+                        sb.append("• ").append(j.optString("name", "ساکن"))
+                          .append(" (واحد ").append(j.optString("unit", "—")).append(")\n");
+                    } else if ("MOVE_OK".equals(it.kind)) {
+                        txt = "🚚 اسباب‌کشی «" + j.optString("name", "ساکن") + "» (واحد " + j.optString("unit", "—") + ") توسط مدیر تأیید شد — هماهنگی و راه باز";
+                        sb3.append("• 🚚 ").append(j.optString("name", "ساکن"))
+                          .append(" (واحد ").append(j.optString("unit", "—")).append(")\n");
+                    } else if ("ELEV_OK".equals(it.kind)) {
+                        txt = "🛗 استفاده از آسانسور توسط «" + j.optString("name", "ساکن") + "» (واحد " + j.optString("unit", "—") + ") تأیید شد";
+                        sb3.append("• 🛗 ").append(j.optString("name", "ساکن"))
+                          .append(" (واحد ").append(j.optString("unit", "—")).append(")\n");
+                    } else if ("GU_OK".equals(it.kind) || "GU_NO".equals(it.kind)) {
+                        boolean ok = "GU_OK".equals(it.kind);
+                        String by = "modir".equals(j.optString("by", "")) ? " توسط مدیر" : "";
+                        txt = (ok ? "✅ ورود مهمان «" : "⛔ درخواست مهمان «") + j.optString("guest", "") + "»" + (ok ? " تأیید شد" : " رد شد") + by;
+                        if (!"guard".equals(j.optString("by", "")))
+                            sb2.append("• ").append(j.optString("guest", "مهمان"))
+                              .append(" — ").append(ok ? "تأیید شد ✅" : "رد شد ⛔").append("\n");
+                    } else if ("NEWS".equals(it.kind)) {
+                        txt = "📢 " + j.optString("title", "اطلاعیه") + ": " + j.optString("body", "");
+                    } else if (!"GU_GUEST_REQ".equals(it.kind)) {
+                        txt = "💬 پیام جدید از " + it.src;
+                    }
+                } catch (Exception e) {
+                    txt = "💬 پیام جدید از " + it.src;
+                }
+                if (txt != null && st.addNotif(it.id, it.ts, it.kind, txt)) hasNew[0] = true;
+            }
+        } finally { st.close(); }
+        if (Hub.sLastId > after)
+            Cfg.p(this).edit().putLong("hubAfter", Hub.sLastId).apply();
+        final boolean fNew = hasNew[0];
+        runOnUiThread(new Runnable() {
+            @Override public void run() {
+                updateBell();
+                if (fNew) { chime(); }
+                if (sb.length() > 0) {
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("🔑 تحویل کلید پشت‌بام")
+                            .setMessage("مدیر تأیید کرده — کلید پشت‌بام تحویل داده شود:\n\n" + sb)
+                            .setPositiveButton("ثبت شد", null)
+                            .show();
+                }
+                if (sb2.length() > 0) {
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("🚶 وضعیت مهمانِ ساکن")
+                            .setMessage("نتیجهٔ درخواست‌های مهمان:\n\n" + sb2 + "\nورود/خروج را در بخش مهمان‌ها ثبت کن.")
+                            .setPositiveButton("باشه", null)
+                            .show();
+                }
+                if (sb3.length() > 0) {
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("🚚🛗 درخواست تأییدشدهٔ مدیر")
+                            .setMessage("این موارد توسط مدیر تأیید شده:\n\n" + sb3 + "\nهماهنگی لازم انجام شود.")
+                            .setPositiveButton("باشه", null)
+                            .show();
+                }
+            }
+        });
+    }
+
+    /** شروع سرویس پایش بلادرنگ + گرفتن اجازهٔ اعلان (اندروید ۱۳ به بالا) */
+    void startNotify() {
+        uiVisible = true;
+        try {
+            Intent i = new Intent(this, NotifyService.class);
+            if (android.os.Build.VERSION.SDK_INT >= 26) startForegroundService(i);
+            else startService(i);
+        } catch (Exception ignored) { }
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 33
+                    && checkSelfPermission("android.permission.POST_NOTIFICATIONS")
+                       != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 77);
+            }
+        } catch (Exception ignored) { }
+    }
+
+    /** 🔔 صدای کوتاه هنگام پیام تازه */
+    void chime() {
+        try {
+            android.media.ToneGenerator tg = new android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION, 100);
+            tg.startTone(android.media.ToneGenerator.TONE_PROP_BEEP2, 500);
+            new Thread(new Runnable() {
+                @Override public void run() {
+                    try { Thread.sleep(900); } catch (Exception ignored) { }
+                    try { tg.release(); } catch (Exception ignored) { }
+                }
+            }).start();
+        } catch (Exception ignored) { }
+    }
+
+    /** نشان تعداد ندیده‌ها روی زنگوله */
+    void updateBell() {
+        final android.widget.TextView bellBadge = findViewById(R.id.bellBadge);
+        if (bellBadge == null) return;
+        new Thread(new Runnable() {
+            @Override public void run() {
+                PatrolStore st = new PatrolStore(MainActivity.this);
+                final int n;
+                try { n = st.unseenNotifs(); } finally { st.close(); }
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        if (n > 0) {
+                            bellBadge.setVisibility(View.VISIBLE);
+                            bellBadge.setText(Scheduler.fa(String.valueOf(Math.min(n, 99))));
+                        } else {
+                            bellBadge.setVisibility(View.GONE);
+                        }
+                    }
+                });
+            }
+        }).start();
     }
 
     /** چک خودکار: حداکثر یک‌بار در شبانه‌روز، بی‌صدا؛ فقط وقتی نسخهٔ جدید هست پنجره می‌آید */
     private void maybeAutoUpdate() {
-        if (!Updater.shouldAutoCheck(this)) return;
+        // هر باز شدن چک شود — مثل ساکن‌یار (بدون بازهٔ ۲۴ ساعته)
         new Thread(new Runnable() {
             @Override public void run() {
                 Updater.Res r = Updater.check(MainActivity.this);
                 if (r.ok) {
                     Updater.markChecked(MainActivity.this);
+                    Updater.setForce(MainActivity.this, r.updateAvailable);
                     if (r.updateAvailable) {
                         runOnUiThread(new Runnable() {
                             @Override public void run() {
-                                try { UpdaterUi.run(MainActivity.this, true); } catch (Exception ignored) {}
+                                try {
+                                    startActivity(new Intent(MainActivity.this, ForceUpdateActivity.class));
+                                    finish();
+                                } catch (Exception ignored) {}
                             }
                         });
+                        return;
                     }
                 }
-                // خطا در حالت خودکار بی‌صدا
+                // پوش نوتیفیکیشن سازنده
+                final PushFeed.Item p = PushFeed.fetchUnseen(MainActivity.this, "negahban");
+                if (p != null) {
+                    runOnUiThread(new Runnable() {
+                        @Override public void run() { try { PushFeed.show(MainActivity.this, p); } catch (Exception ignored) {} }
+                    });
+                }
             }
         }).start();
     }

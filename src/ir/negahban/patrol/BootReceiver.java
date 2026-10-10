@@ -16,7 +16,9 @@ public class BootReceiver extends BroadcastReceiver {
                 try {
                     Scheduler.ensurePlan(c);
                     Sync.drain(c);
-                    if (Cfg.botEnabled(c)) BotService.start(c);
+                    Intent sv = new Intent(c, NotifyService.class);
+                    if (android.os.Build.VERSION.SDK_INT >= 26) c.startForegroundService(sv);
+                    else c.startService(sv);
                 } catch (Exception ignored) {
                 } finally {
                     pr.finish();

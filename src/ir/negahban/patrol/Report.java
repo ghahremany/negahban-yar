@@ -99,7 +99,7 @@ public class Report {
         }
         if (!hasFlags) sb.append("✅ بدون پرچم مشکوک\n");
 
-        sb.append("\n— نگهبان‌یار v۰٫۳ (بدون سرور)");
+        sb.append("\n— نگهبان‌یار v۲٫۰");
         return sb.toString();
     }
 

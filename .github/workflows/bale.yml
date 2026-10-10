@@ -1,0 +1,93 @@
+name: bale-bot
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+concurrency:
+  group: bale-loop
+  cancel-in-progress: true
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: poll bale ↔ brain on server (loop, ~60s latency)
+        env:
+          BALE_TOKEN: ${{ secrets.BALE_TOKEN }}
+          NGY_KEY: NGY-CLOUD-7c4e2f91a8d63b50e7f1c2a493d85b6e
+          SITE: https://negahbanyar.xo.je
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess, time, urllib.request, urllib.parse
+          TOK = os.environ['BALE_TOKEN']; KEY = os.environ['NGY_KEY']; SITE = os.environ['SITE']
+          def bale(m, p=None, t=40):
+              u = f'https://tapi.bale.ai/bot{TOK}/{m}'
+              if p: u += '?' + urllib.parse.urlencode(p)
+              for i in range(3):
+                  try:
+                      with urllib.request.urlopen(u, timeout=t) as r: return json.load(r)
+                  except Exception as e:
+                      if i == 2: return {'ok': False, 'err': str(e)}
+                      time.sleep(2)
+          TEST = {'v': ''}
+          def raw(u, t=45):
+              h = {'User-Agent': 'okhttp/4.9.3'}
+              if TEST['v']: h['Cookie'] = '__test=' + TEST['v']
+              req = urllib.request.Request(u, headers=h)
+              with urllib.request.urlopen(req, timeout=t) as r:
+                  return r.read().decode('utf-8', 'replace')
+          def solve(html):
+              v = re.findall(r'toNumbers\("([0-9a-fA-F]+)"\)', html)
+              if len(v) < 3: return ''
+              p = subprocess.run(['openssl', 'enc', '-aes-128-cbc', '-d', '-K', v[0], '-iv', v[1], '-nopad'],
+                                 input=bytes.fromhex(v[2]), capture_output=True)
+              return p.stdout.hex()
+          def srv(a, p=None):
+              p = dict(p or {}); p['action'] = a; p['key'] = KEY
+              u = SITE + '/bale/bot.php?' + urllib.parse.urlencode(p)
+              for i in range(5):
+                  try: body = raw(u)
+                  except Exception:
+                      time.sleep(2 + i * 2); continue
+                  if 'aes.js' in body:
+                      v = solve(body)
+                      if v: TEST['v'] = v
+                      time.sleep(1); continue
+                  if not body.strip():
+                      time.sleep(2 + i * 2); continue
+                  try: return json.loads(body)
+                  except Exception: time.sleep(2)
+              return {'ok': False, 'err': 'srv unreachable'}
+          def poll_once(k):
+              off = int(srv('offset').get('offset', 0))
+              up = bale('getUpdates', {'offset': off, 'timeout': 30})
+              n = sent = 0; failed = False
+              for u in (up.get('result') or []):
+                  m = u.get('message') or {}; c = (m.get('chat') or {}).get('id'); t = m.get('text')
+                  if not c or not t:
+                      off = max(off, u['update_id'] + 1); continue
+                  r = srv('feed', {'chat': c, 'text': t})
+                  if not r.get('ok'):
+                      print('FEED FAIL', json.dumps(r, ensure_ascii=False)[:200], flush=True); failed = True; break
+                  reply = (r.get('reply') or '').strip()
+                  if reply:
+                      rr = bale('sendMessage', {'chat_id': c, 'text': reply[:4000]})
+                      if rr.get('ok'): sent += 1
+                      else: print('SEND FAIL', json.dumps(rr, ensure_ascii=False)[:200], flush=True)
+                  off = max(off, u['update_id'] + 1); n += 1
+                  srv('offset', {'value': off})
+                  time.sleep(0.4)
+              if not failed: srv('offset', {'value': off})
+              ob = srv('outbox'); osent = 0
+              for o in (ob.get('items') or []):
+                  rr = bale('sendMessage', {'chat_id': o['chat'], 'text': (o['text'] or '')[:4000]})
+                  if rr.get('ok'): srv('sent', {'id': o['id']}); osent += 1
+              print(f'iter{k}: updates={n} replied={sent} outbox={osent} failed={failed}', flush=True)
+          k = 0
+          while True:
+              k += 1
+              try: poll_once(k)
+              except Exception as e:
+                  print('loop err:', e, flush=True); time.sleep(10)
+              time.sleep(30)
+          PY

@@ -20,7 +20,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
- * به‌روزرسان خودکار از گیت‌هاب:
+ * به‌روزرسان خودکار:
  * نسخهٔ آخر از releases/latest خوانده می‌شود (تگ v0.9 = نسخهٔ ۰٫۹)؛
  * اگر از نسخهٔ نصب‌شده بزرگ‌تر بود → دانلود APK با درصد پیشرفت → راه‌اندازی نصب‌گر.
  * نصب نهایی همیشه با تأیید کاربر است (اندروید اجازهٔ نصب بی‌صدا نمیدهد).
@@ -28,7 +28,11 @@ import java.net.URL;
 public class Updater {
 
     public static final String REPO = "ghahremany/negahban-yar";
+    /** فقط فایل‌های همین اپ از میان دارایی‌های انتشار (سوئیت «یار» چند APK دارد) */
+    public static final String ASSET_PREFIX = "negahban-";
     public static final String API = "https://api.github.com/repos/" + REPO + "/releases/latest";
+
+    private static String assetName = "";
 
     public static class Res {
         public boolean ok;
@@ -54,11 +58,8 @@ public class Updater {
             conn.setRequestProperty("User-Agent", "negahban-yar-app");
             int code = conn.getResponseCode();
             InputStream in = code >= 400 ? conn.getErrorStream() : conn.getInputStream();
-            String body = in == null ? "" : Bale.readRawStream(in);
-            if (code != 200) {
-                r.error = "پاسخ گیت‌هاب: " + code;
-                return r;
-            }
+            String body = in == null ? "" : readRawStream(in);
+            if (code != 200) { return fallback(c, r, "پاسخ سرور به‌روزرسانی: " + code); }
             JSONObject j = new JSONObject(body);
             r.tag = j.optString("tag_name", "").trim();
             r.notes = j.optString("body", "");
@@ -67,24 +68,81 @@ public class Updater {
             JSONArray assets = j.optJSONArray("assets");
             for (int i = 0; assets != null && i < assets.length(); i++) {
                 JSONObject a = assets.getJSONObject(i);
-                if (a.optString("name", "").endsWith(".apk")) {
+                String n = a.optString("name", "");
+                if (n.startsWith(ASSET_PREFIX) && n.endsWith(".apk")) {
                     r.downloadUrl = a.optString("browser_download_url", "");
                     r.size = a.optLong("size", 0);
+                    assetName = n;
                     break;
                 }
             }
-            if (r.downloadUrl.isEmpty()) {
-                r.error = "فایل APK در انتشار پیدا نشد";
-                return r;
-            }
+            if (r.downloadUrl.isEmpty()) { return fallback(c, r, null); }
+            // نسخهٔ هر اپ از نام فایل خودش خوانده میشود (تگ انتشار مشترک سوئیت است)
+            // مثال: modir-v1.0.1.apk → «1.0.1»
+            String av = versionFromAsset(assetName, ASSET_PREFIX);
+            if (av == null || av.isEmpty()) av = r.tag;
+            r.tag = av; // نمایش «نسخهٔ جدید» همان نسخهٔ فایل این اپ است
             String local = localVersion(c);
-            int cmp = compareVersions(r.tag, local);
+            int cmp = compareVersions(av, local);
             r.updateAvailable = cmp > 0;
+            Cfg.set(c, "forceTag", av);
             r.ok = true;
         } catch (Exception e) {
-            r.error = String.valueOf(e);
+            return fallback(c, r, String.valueOf(e));
         }
         return r;
+    }
+
+    /** پشتیبان: نسخهٔ آخر از versions.json روی صفحهٔ محصول */
+    private static Res fallback(Context c, Res r, String apiErr) {
+        try {
+            HttpURLConnection conn = (HttpURLConnection) new URL("https://ghahremany.github.io/negahban-yar/versions.json").openConnection();
+            conn.setConnectTimeout(8000);
+            conn.setReadTimeout(10000);
+            conn.setRequestProperty("User-Agent", "negahban-yar-app");
+            int code = conn.getResponseCode();
+            String body = readRawStream(code >= 400 ? conn.getErrorStream() : conn.getInputStream());
+            String ver = new JSONObject(body).optString(ASSET_PREFIX.replace("-", ""), "").trim();
+            if (!ver.isEmpty()) {
+                r.tag = ver;
+                r.downloadUrl = "https://github.com/" + REPO + "/releases/latest/download/" + ASSET_PREFIX + "v" + ver + ".apk";
+                r.size = 0;
+                r.updateAvailable = compareVersions(ver, localVersion(c)) > 0;
+                Cfg.set(c, "forceTag", ver);
+                r.ok = true;
+                return r;
+            }
+        } catch (Exception ignored) { }
+
+        // 🌐 مسیر سوم: نسخهٔ آخر از سرور سایت خودمان (اگر گیت‌هاب در دسترس نبود)
+        try {
+            String body = siteGet("https://negahbanyar.xo.je/versions.json");
+            if (body != null && body.trim().startsWith("{")) {
+                String ver = new JSONObject(body).optString(ASSET_PREFIX.replace("-", ""), "").trim();
+                if (!ver.isEmpty()) {
+                    r.tag = ver;
+                    r.downloadUrl = "https://negahbanyar.xo.je/apk/" + ASSET_PREFIX + "v" + ver + ".apk";
+                    r.size = 0;
+                    r.updateAvailable = compareVersions(ver, localVersion(c)) > 0;
+                    Cfg.set(c, "forceTag", ver);
+                    r.ok = true;
+                    return r;
+                }
+            }
+        } catch (Exception ignored) { }
+        r.error = apiErr == null ? "نسخه‌ای برای این اپ پیدا نشد — چند دقیقه بعد تلاش کن" : apiErr;
+        return r;
+    }
+
+    /** «modir-v1.0.1.apk» با پیشوند «modir-» → «1.0.1» */
+    static String versionFromAsset(String name, String prefix) {
+        try {
+            String v = name.replace(prefix, "").replace(".apk", "").trim();
+            if (v.startsWith("v") || v.startsWith("V")) v = v.substring(1);
+            return v.trim();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static String localVersion(Context c) {
@@ -121,8 +179,21 @@ public class Updater {
         conn.setConnectTimeout(15000);
         conn.setReadTimeout(60000);
         conn.setRequestProperty("User-Agent", "negahban-yar-app");
+        if (sCookie != null) conn.setRequestProperty("Cookie", sCookie);
         int code = conn.getResponseCode();
-        if (code != 200) throw new Exception("پاسخ گیت‌هاب: " + code);
+        if (code != 200) throw new Exception("پاسخ سرور به‌روزرسانی: " + code);
+        String ctype = conn.getContentType() == null ? "" : conn.getContentType();
+        if (ctype.contains("text/html")) { // چالش امنیتی میزبان — حل کن و دوباره
+            String body = readRawStream(conn.getInputStream());
+            if (!solveChallenge(body)) throw new Exception("چالش امنیتی میزبان دانلود");
+            conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(60000);
+            conn.setRequestProperty("User-Agent", "negahban-yar-app");
+            conn.setRequestProperty("Cookie", sCookie);
+            code = conn.getResponseCode();
+            if (code != 200) throw new Exception("پاسخ سرور به‌روزرسانی: " + code);
+        }
         long total = expectedSize > 0 ? expectedSize : conn.getContentLength();
         InputStream in = conn.getInputStream();
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
@@ -191,6 +262,16 @@ public class Updater {
         }
     }
 
+    /** --- به‌روزرسانی اجباری: کش نتیجهٔ آخرین چک --- */
+    public static void setForce(Context c, boolean needed) {
+        Cfg.set(c, "forceUpdate", needed);
+    }
+
+    public static boolean forceNeeded(Context c) {
+        return Cfg.p(c).getBoolean("forceUpdate", false)
+                && compareVersions(localVersion(c), Cfg.p(c).getString("forceTag", "")) < 0;
+    }
+
     /** فاصلهٔ زمانی چک خودکار: یک‌بار در شبانه‌روز */
     public static boolean shouldAutoCheck(Context c) {
         long last = Cfg.p(c).getLong("lastUpdateCheck", 0);
@@ -199,5 +280,64 @@ public class Updater {
 
     public static void markChecked(Context c) {
         Cfg.set(c, "lastUpdateCheck", PatrolStore.now());
+    }
+
+    // ---------- 🌐 سرور سایت خودمان (مسیر سوم) ----------
+    private static String sCookie = null;
+
+    /** دریافت متن با عبور از چالش امنیتی میزبان (null = ناموفق) */
+    private static String siteGet(String url) {
+        for (int t = 0; t < 2; t++) {
+            try {
+                HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+                c.setConnectTimeout(10000);
+                c.setReadTimeout(15000);
+                c.setRequestProperty("User-Agent", "negahban-yar-app");
+                if (sCookie != null) c.setRequestProperty("Cookie", sCookie);
+                int code = c.getResponseCode();
+                java.io.InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+                String body = in == null ? "" : readRawStream(in);
+                if (body.contains("/aes.js")) {
+                    if (!solveChallenge(body)) return null;
+                    continue;
+                }
+                return code == 200 ? body : null;
+            } catch (Exception e) { return null; }
+        }
+        return null;
+    }
+
+    /** حل چالش «__test» میزبان — مثل مرورگر، با AES */
+    private static boolean solveChallenge(String html) {
+        try {
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("toNumbers\\(\"([0-9a-f]{32})\"\\)").matcher(html);
+            String a = null, b = null, cc = null;
+            if (m.find()) a = m.group(1);
+            if (m.find()) b = m.group(1);
+            if (m.find()) cc = m.group(1);
+            if (a == null || b == null || cc == null) return false;
+            javax.crypto.Cipher ci = javax.crypto.Cipher.getInstance("AES/CBC/NoPadding");
+            ci.init(javax.crypto.Cipher.DECRYPT_MODE,
+                    new javax.crypto.spec.SecretKeySpec(ngyHex(a), "AES"),
+                    new javax.crypto.spec.IvParameterSpec(ngyHex(b)));
+            StringBuilder sb = new StringBuilder();
+            for (byte x : ci.doFinal(ngyHex(cc))) sb.append(String.format("%02x", x));
+            sCookie = "__test=" + sb;
+            return true;
+        } catch (Exception e) { return false; }
+    }
+
+    static byte[] ngyHex(String s) {
+        byte[] o = new byte[s.length() / 2];
+        for (int i = 0; i < o.length; i++) o[i] = (byte) Integer.parseInt(s.substring(i * 2, i * 2 + 2), 16);
+        return o;
+    }
+
+    static String readRawStream(java.io.InputStream in) throws Exception {
+        java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = in.read(buf)) > 0) bo.write(buf, 0, n);
+        return bo.toString("UTF-8");
     }
 }

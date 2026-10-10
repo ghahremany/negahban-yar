@@ -13,16 +13,18 @@ public class PatrolStore extends SQLiteOpenHelper {
 
     private final Context ctx;
 
-    public PatrolStore(Context c) { super(c, "patrol.db", null, 4); ctx = c.getApplicationContext(); }
+    public PatrolStore(Context c) { super(c, "patrol.db", null, 7); ctx = c.getApplicationContext(); }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE ev(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, type TEXT, station INTEGER, flag TEXT, extra TEXT)");
-        db.execSQL("CREATE TABLE q(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, txt TEXT, sent INTEGER DEFAULT 0, sentTs INTEGER DEFAULT 0)");
+        db.execSQL("CREATE TABLE q(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, txt TEXT, sent INTEGER DEFAULT 0, sentTs INTEGER DEFAULT 0, kind TEXT DEFAULT 'REPORT')");
         db.execSQL("CREATE TABLE resident(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, mobile TEXT, plate TEXT, car TEXT, parking TEXT, chatId INTEGER DEFAULT 0, approved INTEGER DEFAULT 1)");
-        db.execSQL("CREATE TABLE guest(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, name TEXT, mobile TEXT, plate TEXT, nid TEXT, outTs INTEGER DEFAULT 0)");
+        db.execSQL("CREATE TABLE guest(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, name TEXT, mobile TEXT, plate TEXT, nid TEXT, unit TEXT DEFAULT '', outTs INTEGER DEFAULT 0)");
         db.execSQL("CREATE TABLE pkg(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, kind TEXT, barcode TEXT, rname TEXT, rmobile TEXT, rblock TEXT, sms TEXT DEFAULT 'PENDING', claimed INTEGER DEFAULT 0, givenTs INTEGER DEFAULT 0)");
         db.execSQL("CREATE TABLE member_req(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, chatId INTEGER, name TEXT, mobile TEXT, unit TEXT, status TEXT DEFAULT 'PENDING')");
+        db.execSQL("CREATE TABLE notif(id INTEGER PRIMARY KEY AUTOINCREMENT, sid INTEGER UNIQUE, ts INTEGER, kind TEXT, text TEXT, seen INTEGER DEFAULT 0)");
+        db.execSQL("CREATE TABLE notif(id INTEGER PRIMARY KEY AUTOINCREMENT, sid INTEGER UNIQUE, ts INTEGER, kind TEXT, text TEXT, seen INTEGER DEFAULT 0)");
     }
 
     @Override
@@ -39,6 +41,9 @@ public class PatrolStore extends SQLiteOpenHelper {
             try { db.execSQL("ALTER TABLE pkg ADD COLUMN givenTs INTEGER DEFAULT 0"); } catch (Exception ignored) {}
             db.execSQL("CREATE TABLE IF NOT EXISTS member_req(id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, chatId INTEGER, name TEXT, mobile TEXT, unit TEXT, status TEXT DEFAULT 'PENDING')");
         }
+        if (o < 5) db.execSQL("CREATE TABLE IF NOT EXISTS notif(id INTEGER PRIMARY KEY AUTOINCREMENT, sid INTEGER UNIQUE, ts INTEGER, kind TEXT, text TEXT, seen INTEGER DEFAULT 0)");
+        if (o < 6) { try { db.execSQL("ALTER TABLE q ADD COLUMN kind TEXT DEFAULT 'REPORT'"); } catch (Exception ignored) {} }
+        if (o < 7) { try { db.execSQL("ALTER TABLE guest ADD COLUMN unit TEXT DEFAULT ''"); } catch (Exception ignored) {} }
     }
 
     public static long now() { return System.currentTimeMillis(); }
@@ -147,13 +152,17 @@ public class PatrolStore extends SQLiteOpenHelper {
 
     // ---------- صف ارسال ----------
 
-    public long enq(String txt) {
+    public long enq(String txt) { return enqK("REPORT", txt); }
+
+    /** صف با نوع پیام: REPORT | GUEST_IN | GUEST_OUT | PKG_IN | PKG_OUT | NGHQ */
+    public long enqK(String kind, String txt) {
         SQLiteDatabase db = getWritableDatabase();
         try {
             ContentValues v = new ContentValues();
             v.put("ts", now());
             v.put("txt", txt);
             v.put("sent", 0);
+            v.put("kind", kind);
             return db.insert("q", null, v);
         } finally { db.close(); }
     }
@@ -163,9 +172,13 @@ public class PatrolStore extends SQLiteOpenHelper {
         SQLiteDatabase db = getReadableDatabase();
         try {
             ArrayList<String[]> out = new ArrayList<>();
-            Cursor cur = db.query("q", new String[]{"id", "txt"}, "sent=0", null, null, null, "id", "50");
+            Cursor cur = db.query("q", new String[]{"id", "txt", "kind"}, "sent=0", null, null, null, "id", "50");
             try {
-                while (cur.moveToNext()) out.add(new String[]{String.valueOf(cur.getLong(0)), cur.getString(1)});
+                String k;
+                while (cur.moveToNext()) {
+                    k = cur.getString(2);
+                    out.add(new String[]{String.valueOf(cur.getLong(0)), cur.getString(1), k == null || k.trim().isEmpty() ? "REPORT" : k});
+                }
             } finally { cur.close(); }
             return out;
         } finally { db.close(); }
@@ -365,27 +378,29 @@ public class PatrolStore extends SQLiteOpenHelper {
 
     // ---------- مهمان‌ها ----------
 
-    public long addGuestTs(long ts, String name, String mobile, String plate, String nid, long outTs) {
+    public long addGuestTs(long ts, String name, String mobile, String plate, String nid, long outTs, String unit) {
         SQLiteDatabase db = getWritableDatabase();
         try {
             ContentValues v = new ContentValues();
             v.put("ts", ts); v.put("name", name); v.put("mobile", mobile);
             v.put("plate", plate); v.put("nid", nid); v.put("outTs", outTs);
+            v.put("unit", unit == null ? "" : unit);
             return db.insert("guest", null, v);
         } finally { db.close(); }
     }
 
-    /** [id, ts, name, mobile, plate, nid, outTs] — جدیدترین اول */
+    /** [id, ts, name, mobile, plate, nid, outTs, unit] — جدیدترین اول */
     public ArrayList<String[]> allGuests(int limit) {
         SQLiteDatabase db = getReadableDatabase();
         try {
             ArrayList<String[]> out = new ArrayList<>();
-            Cursor cur = db.rawQuery("SELECT id, ts, name, mobile, plate, nid, outTs FROM guest ORDER BY id DESC LIMIT ?",
+            Cursor cur = db.rawQuery("SELECT id, ts, name, mobile, plate, nid, outTs, unit FROM guest ORDER BY id DESC LIMIT ?",
                     new String[]{String.valueOf(limit)});
             try {
                 while (cur.moveToNext()) {
                     out.add(new String[]{String.valueOf(cur.getLong(0)), String.valueOf(cur.getLong(1)),
-                            cur.getString(2), cur.getString(3), cur.getString(4), cur.getString(5), String.valueOf(cur.getLong(6))});
+                            cur.getString(2), cur.getString(3), cur.getString(4), cur.getString(5), String.valueOf(cur.getLong(6)),
+                            cur.getString(7) == null ? "" : cur.getString(7)});
                 }
             } finally { cur.close(); }
             return out;
@@ -465,5 +480,45 @@ public class PatrolStore extends SQLiteOpenHelper {
             } finally { cur.close(); }
             return out;
         } finally { db.close(); }
+    }
+
+    // ---------- اعلان‌ها (زنگوله) ----------
+
+    /** درج اعلان تازه — true فقط اگر جدید بود (تکراری نادیده) */
+    public boolean addNotif(long sid, long ts, String kind, String text) {
+        SQLiteDatabase db = getWritableDatabase();
+        try {
+            ContentValues v = new ContentValues();
+            v.put("sid", sid); v.put("ts", ts); v.put("kind", kind);
+            v.put("text", text); v.put("seen", 0);
+            return db.insertWithOnConflict("notif", null, v, SQLiteDatabase.CONFLICT_IGNORE) != -1;
+        } finally { db.close(); }
+    }
+
+    /** [0]=sid [1]=ts [2]=kind [3]=text [4]=seen */
+    public ArrayList<String[]> notifs(int limit) {
+        SQLiteDatabase db = getReadableDatabase();
+        ArrayList<String[]> out = new ArrayList<String[]>();
+        try {
+            android.database.Cursor c = db.rawQuery("SELECT sid, ts, kind, text, seen FROM notif ORDER BY sid DESC LIMIT " + limit, null);
+            while (c.moveToNext()) out.add(new String[]{String.valueOf(c.getLong(0)), String.valueOf(c.getLong(1)), c.getString(2), c.getString(3), String.valueOf(c.getInt(4))});
+            c.close();
+        } finally { db.close(); }
+        return out;
+    }
+
+    public int unseenNotifs() {
+        SQLiteDatabase db = getReadableDatabase();
+        try {
+            android.database.Cursor c = db.rawQuery("SELECT COUNT(*) FROM notif WHERE seen=0", null);
+            int n = c.moveToFirst() ? c.getInt(0) : 0;
+            c.close();
+            return n;
+        } finally { db.close(); }
+    }
+
+    public void markNotifsSeen() {
+        SQLiteDatabase db = getWritableDatabase();
+        try { db.execSQL("UPDATE notif SET seen=1 WHERE seen=0"); } finally { db.close(); }
     }
 }

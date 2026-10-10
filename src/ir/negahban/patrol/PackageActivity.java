@@ -119,14 +119,40 @@ public class PackageActivity extends Activity {
         final long id = st.addPackageTs(PatrolStore.now(), kind, barcode, name, mobile, block, "PENDING");
         st.close();
 
-        // ۲) خبر در بله (همیشه — تاریخچه + پشتیبان)
+        // ۲) خبر ماشینی برای مدیر یار + متن خوانا (در صف)
+        long ts = PatrolStore.now();
         PatrolStore q = new PatrolStore(this);
-        q.enq("📦 بسته ثبت شد\n👤 گیرنده: " + name
-                + (block.isEmpty() ? "" : "\n🏢 بلوک: " + block)
+        q.enqK("NGHQ", "NGHQ|PKG|" + ts + "|" + kind + "|" + barcode + "|" + name + "|" + mobile + "|" + block);
+        q.enqK("PKG_IN", "👤 گیرنده: " + name
+                + (block.isEmpty() ? "" : "\n🏢 بلوک/واحد: " + block)
                 + "\n📦 نوع: " + kind
                 + (barcode.isEmpty() ? "" : "\n🔖 بارکد: " + barcode)
-                + "\n🕐 " + Scheduler.jalaliDate(PatrolStore.now()) + " — " + Scheduler.fa(Scheduler.hm(PatrolStore.now())));
+                + "\n🕐 " + Scheduler.jalaliDate(ts) + " — " + Scheduler.fa(Scheduler.hm(ts)));
         q.close();
+        Sync.kick(this);   // ارسال فوری به مدیر
+
+        // ۲٫۵) فهرست مشترک بسته‌ها (برای «بسته‌های من» ساکن‌یار)
+        final String code = Hub.code(this);
+        if (!code.isEmpty()) {
+            String fJsonTmp = "";
+            try {
+                org.json.JSONObject pj = new org.json.JSONObject();
+                pj.put("ts", ts);
+                pj.put("kind", kind);
+                pj.put("barcode", barcode);
+                pj.put("rname", name);
+                pj.put("unit", block);
+                pj.put("mobile", mobile);
+                pj.put("status", "PENDING");
+                fJsonTmp = pj.toString();
+            } catch (Exception ignored) { }
+            final String fJson = fJsonTmp;
+            if (!fJson.isEmpty()) {
+                new Thread(new Runnable() {
+                    @Override public void run() { Hub.dataPut(code, "packages", fJson, true); }
+                }).start();
+            }
+        }
 
         // ۳) پیامک به گیرنده
         sendSms(id, mobile, smsText(kind, barcode, name, block));
@@ -259,11 +285,19 @@ public class PackageActivity extends Activity {
                 gLp.topMargin = dp(6);
                 givenBtn.setLayoutParams(gLp);
                 final long pkgId = Long.parseLong(k[0]);
+                final String rname = k[4], rmobile2 = k[5], rblock = k[6] == null ? "" : k[6], rkind = k[2] == null ? "" : k[2], rbar = k[3] == null ? "" : k[3];
                 givenBtn.setOnClickListener(new View.OnClickListener() {
                     @Override public void onClick(View v) {
                         PatrolStore st2 = new PatrolStore(PackageActivity.this);
                         st2.markGiven(pkgId);
+                        long gts2 = PatrolStore.now();
+                        st2.enqK("PKG_OUT", "👤 گیرنده: " + rname
+                                + (rblock.isEmpty() ? "" : "\n🏢 بلوک/واحد: " + rblock)
+                                + "\n📦 نوع: " + rkind
+                                + (rbar.isEmpty() ? "" : "\n🔖 بارکد: " + rbar)
+                                + "\n🕐 " + Scheduler.jalaliDate(gts2) + " — " + Scheduler.fa(Scheduler.hm(gts2)));
                         st2.close();
+                        Sync.kick(PackageActivity.this);   // ارسال فوری به مدیر
                         toast("تحویل ثبت شد ✅");
                         refresh();
                     }

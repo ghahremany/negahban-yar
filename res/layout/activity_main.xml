@@ -11,8 +11,19 @@
         <LinearLayout
             android:layout_width="match_parent" android:layout_height="56dp"
             android:orientation="horizontal"
+            android:layoutDirection="rtl"
+            android:clipChildren="false" android:clipToPadding="false"
             android:background="@color/primaryDark"
             android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/btnMenu"
+                android:layout_width="wrap_content" android:layout_height="match_parent"
+                android:text="☰"
+                android:textColor="#FFFFFF" android:textSize="22sp"
+                android:gravity="center"
+                android:paddingLeft="18dp" android:paddingRight="18dp"
+                android:background="?android:attr/selectableItemBackground"/>
 
             <TextView
                 android:layout_width="0dp" android:layout_height="wrap_content"
@@ -20,16 +31,32 @@
                 android:text="🛡 نگهبان‌یار"
                 android:textColor="#FFFFFF" android:textSize="19sp" android:textStyle="bold"
                 android:gravity="center_vertical"
-                android:paddingStart="16dp" android:paddingEnd="16dp"/>
+                android:paddingLeft="16dp" android:paddingRight="16dp"/>
 
-            <TextView
-                android:id="@+id/btnMenu"
-                android:layout_width="wrap_content" android:layout_height="match_parent"
-                android:text="☰"
-                android:textColor="#FFFFFF" android:textSize="24sp"
-                android:gravity="center"
-                android:paddingStart="22dp" android:paddingEnd="22dp"
-                android:background="?android:attr/selectableItemBackground"/>
+            <FrameLayout
+                android:id="@+id/bellBox"
+                android:layout_width="48dp" android:layout_height="match_parent"
+                android:clipChildren="false" android:clipToPadding="false"
+                android:background="?android:attr/selectableItemBackground">
+
+                <TextView
+                    android:id="@+id/btnBell"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:paddingLeft="4dp" android:paddingRight="4dp"
+                    android:text="🔔" android:textSize="21sp"/>
+
+                <TextView
+                    android:id="@+id/bellBadge"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_gravity="top|left"
+                    android:layout_marginLeft="26dp" android:layout_marginTop="4dp"
+                    android:textColor="#FFFFFF" android:textSize="10sp" android:textStyle="bold"
+                    android:minWidth="18dp" android:minHeight="18dp"
+                    android:gravity="center"
+                    android:paddingLeft="3dp" android:paddingRight="3dp"
+                    android:visibility="gone"/>
+            </FrameLayout>
         </LinearLayout>
 
         <TextView
@@ -231,14 +258,13 @@
         <TextView android:id="@+id/dSearchRes" style="@style/DrawerItem" android:text="🔎  جستجوی ساکنین"/>
         <TextView android:id="@+id/dGuests" style="@style/DrawerItem" android:text="🚶  ورود مهمان"/>
         <TextView android:id="@+id/dPackages" style="@style/DrawerItem" android:text="📦  دریافت بسته"/>
-        <TextView android:id="@+id/dMembers" style="@style/DrawerItem" android:text="✅  تأیید اعضا"/>
-        <TextView android:id="@+id/dManage" style="@style/DrawerItem" android:text="📊  پنل مدیریت"/>
+        <TextView android:id="@+id/dRoofKey" style="@style/DrawerItem" android:text="🔑  کلید پشت‌بام"/>
+        <TextView android:id="@+id/dElev" style="@style/DrawerItem" android:text="🛗  آسانسور"/>
+        <TextView android:id="@+id/dMove" style="@style/DrawerItem" android:text="🚚  اسباب‌کشی"/>
         <TextView android:id="@+id/dGuards" style="@style/DrawerItem" android:text="👤  نگهبان‌ها و شیفت"/>
-        <TextView android:id="@+id/dResAdmin" style="@style/DrawerItem" android:text="👥  مدیریت ساکنین"/>
         <TextView android:id="@+id/dSettings" style="@style/DrawerItem" android:text="⚙️  تنظیمات"/>
-        <TextView android:id="@+id/dPrint" style="@style/DrawerItem" android:text="🖨️  چاپ پلاک‌ها"/>
         <TextView android:id="@+id/dLock" style="@style/DrawerItem" android:text="🔒  قفل گوشی (حالت کشو)"/>
-        <TextView android:id="@+id/dSync" style="@style/DrawerItem" android:text="🔄  ارسال صف به بله"/>
+        <TextView android:id="@+id/dSync" style="@style/DrawerItem" android:text="🔄  ارسال صف به مدیریت"/>
 
         <View
             android:layout_width="match_parent" android:layout_height="1dp"
@@ -246,6 +272,7 @@
             android:layout_marginTop="8dp" android:layout_marginBottom="8dp"/>
 
         <TextView android:id="@+id/dUpdate" style="@style/DrawerItem" android:text="🔄  بررسی به‌روزرسانی"/>
+        <TextView android:id="@+id/dPage" style="@style/DrawerItem" android:text="🌐  صفحهٔ معرفی محصول"/>
         <TextView android:id="@+id/dDev" style="@style/DrawerItem" android:text="📞  ارتباط با توسعه‌دهنده"/>
 
           </LinearLayout>

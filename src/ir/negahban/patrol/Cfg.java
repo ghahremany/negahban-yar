@@ -96,4 +96,23 @@ public class Cfg {
         if (!days.isEmpty()) sb.append(" • ").append(days);
         return sb.toString();
     }
+
+    /** کلیدهای long که بازیابی بکاپِ قدیمی آن‌ها را int ذخیره کرده — اصلاح خودکار */
+    public static void fixLongs(Context c) {
+        String[] keys = {"licSeenMax", "licExpiry", "installTs", "hubAfter", "bellAfter",
+                "lastCloudAuto", "lastUpdateCheck", "lastSync", "chatId", "roofAfter"};
+        SharedPreferences sp = p(c);
+        SharedPreferences.Editor ed = sp.edit();
+        boolean ch = false;
+        for (String k : keys) {
+            try { sp.getLong(k, 0); }
+            catch (ClassCastException e) {
+                long v;
+                try { v = sp.getInt(k, 0) & 0xFFFFFFFFL; } catch (Exception e2) { continue; }
+                ed.putLong(k, v);
+                ch = true;
+            }
+        }
+        if (ch) ed.apply();
+    }
 }

@@ -194,10 +194,10 @@ public class Scheduler {
             if (pl.getTimeInMillis() <= now) pl.add(Calendar.DAY_OF_YEAR, 1);
             setExact(c, pl.getTimeInMillis(), pi(c, A_PLAN, 302));
 
-            // سینک دوره‌ای هر ۱۵ دقیقه (غیردقیق کافی است)
+            // سینک دوره‌ای هر ۶۰ ثانیه (پشتیبانِ ارسال فوری)
             PendingIntent syncPi = pi(c, A_SYNC, 303);
             am(c).cancel(syncPi);
-            am(c).setInexactRepeating(AlarmManager.RTC_WAKEUP, now + 60000, 15 * 60000L, syncPi);
+            am(c).setRepeating(AlarmManager.RTC_WAKEUP, now + 60000, 60000, syncPi);
         } catch (Exception ignored) {}
     }
 

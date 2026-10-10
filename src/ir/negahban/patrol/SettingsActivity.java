@@ -23,7 +23,7 @@ import java.util.ArrayList;
 /** صفحهٔ تنظیمات — فقط با PIN مدیر؛ شامل ویرایشگر ایستگاه‌ها (افزودن/حذف) */
 public class SettingsActivity extends Activity {
 
-    EditText etToken, etChat, etKey, etBuilding, etCount, etWindow, etNightStart, etNightEnd, etGap, etReport, etPin;
+    EditText etCode, etKey, etBuilding, etCount, etWindow, etNightStart, etNightEnd, etGap, etReport, etPin;
     CheckBox cbWake, cbBot;
     LinearLayout box, stBox;
     final ArrayList<EditText> stIds = new ArrayList<>();
@@ -43,20 +43,12 @@ public class SettingsActivity extends Activity {
 
         title("⚙️ تنظیمات سامانهٔ گشت");
 
-        section("🔗 اتصال به بله");
-        etToken = field("توکن ربات بله (از @botfather)", Cfg.token(this), "123456:ABC-DEF…", InputType.TYPE_CLASS_TEXT);
-        etChat = field("آیدی عددی مقصد (مدیر یا گروه)", Cfg.chatId(this) == 0 ? "" : String.valueOf(Cfg.chatId(this)), "مثلاً 123456789", InputType.TYPE_CLASS_NUMBER);
-        mkBtn("🔌 تست توکن").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { testToken(); }
-        });
-        mkBtn("📥 دریافت chat_id از آخرین پیام به ربات").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { fetchChatId(); }
-        });
-        mkBtn("✉️ ارسال پیام آزمایشی").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { sendTest(); }
+        section("🏢 اتصال به ساختمان");
+        etCode = field("شمارهٔ همراه مدیر ساختمان (کد اتصال)", Cfg.p(this).getString("bldgCode", ""), "مثلاً 09127285065", InputType.TYPE_CLASS_PHONE);
+        mkBtn("🔍 بررسی کد ساختمان").setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { checkCode(); }
         });
 
-        section("🏢 ساختمان و ایستگاه‌ها");
         etBuilding = field("نام ساختمان", Cfg.building(this), null, InputType.TYPE_CLASS_TEXT);
         TextView lbl = new TextView(this);
         lbl.setText("ایستگاه‌ها — با ✕ حذف و با دکمهٔ زیر اضافه کن:");
@@ -92,10 +84,7 @@ public class SettingsActivity extends Activity {
         cbWake.setText("چالش بیداری تصادفی فعال باشد");
         box.addView(cbWake);
 
-        cbBot = new CheckBox(this);
-        cbBot.setText("🤖 ربات ساکنین فعال باشد (پاسخگویی در بله: بسته‌ها و عضویت)");
-        cbBot.setChecked(Cfg.botEnabled(this));
-        box.addView(cbBot);
+        // ربات ساکنین روی «مدیر یار» اجرا می‌شود — اینجا فقط پیام می‌فرستیم
         TextView botNote = new TextView(this);
         botNote.setText("با فعال بودن، یک اعلان ثابت «ربات فعال» در گوشی دیده می‌شود و مصرف باتری کمی بیشتر است. تأیید عضویت‌ها: منوی ☰ → ✅ تأیید اعضا");
         botNote.setTextSize(12);
@@ -112,34 +101,6 @@ public class SettingsActivity extends Activity {
         mkBtn("🏷️ امضای پلاک‌ها (برای چاپ)").setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { showSigs(); }
         });
-        mkBtn("🖨️ چاپ پلاک‌ها (پرینتر یا PDF)").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (collectStations().isEmpty()) { toast("اول ایستگاه‌ها را وارد کن"); return; }
-                toast("دیالوگ چاپ اندروید باز می‌شود…");
-                PlaquePrinter.print(SettingsActivity.this);
-            }
-        });
-
-        section("💾 پشتیبان‌گیری و بازیابی");
-        mkBtn("📤 پشتیبان: ارسال به بله (فایل در چت مدیر)").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { backupToBale(); }
-        });
-        mkBtn("📤 پشتیبان: ذخیرهٔ فایل در حافظهٔ گوشی").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { backupToLocal(); }
-        });
-        mkBtn("📥 بازیابی از فایل پشتیبان").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { restoreFlow(); }
-        });
-
-        section("🔄 به‌روزرسانی");
-        mkBtn("🔄 بررسی نسخهٔ جدید از گیت‌هاب و نصب").setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) { UpdaterUi.run(SettingsActivity.this, false); }
-        });
-        TextView vInfo = new TextView(this);
-        vInfo.setText("نسخهٔ نصب‌شده: v" + Updater.localVersion(this) + "  —  مخزن: github.com/ghahremany/negahban-yar");
-        vInfo.setTextSize(12);
-        vInfo.setTextColor(0xFF607D8B);
-        box.addView(vInfo);
 
         section("🔋 پایداری روی گوشی");
         mkBtn("⏰ اجازهٔ هشدار دقیق (Android 12+)").setOnClickListener(new View.OnClickListener() {
@@ -160,10 +121,60 @@ public class SettingsActivity extends Activity {
             }
         });
 
+        section("📩 پشتیبانی");
+        mkBtn("📩 پشتیبانی (بله) — سوال یا گزارش خطا").setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { supportDialog(); }
+        });
+
         Button save = mkBtnPrimary("💾 ذخیره (برنامهٔ امشب از نو قرعه می‌شود)");
         save.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { save(); }
         });
+    }
+
+    // ---------- دریافت دفتر ساکنین (فایل صادراتی مدیر یار) ----------
+
+    private void importResidents() {
+        android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
+        i.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+        i.setType("*/*");
+        try {
+            startActivityForResult(i, 95);
+        } catch (Exception e) {
+            toast("انتخاب‌گر فایل باز نشد: " + e);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int req, int res, android.content.Intent data) {
+        super.onActivityResult(req, res, data);
+        if (req == 95 && res == RESULT_OK && data != null && data.getData() != null) {
+            try {
+                java.io.InputStream is = getContentResolver().openInputStream(data.getData());
+                String json = Backup.readStream(is);
+                is.close();
+                org.json.JSONObject o = new org.json.JSONObject(json);
+                org.json.JSONArray arr = o.optJSONArray("residents");
+                if (arr == null) { toast("فایل دفتر ساکنین نیست"); return; }
+                PatrolStore st = new PatrolStore(this);
+                st.clearRes();
+                int n = 0;
+                for (int i2 = 0; i2 < arr.length(); i2++) {
+                    org.json.JSONObject r = arr.optJSONObject(i2);
+                    if (r == null) continue;
+                    st.addRes(r.optString("name"), r.optString("mobile"), r.optString("plate"),
+                            r.optString("car"), r.optString("parking"));
+                    n++;
+                }
+                st.close();
+                new AlertDialog.Builder(this)
+                        .setTitle("دفتر ساکنین")
+                        .setMessage(Scheduler.fa(String.valueOf(n)) + " ساکن از فایل مدیر خوانده و جایگزین شد ✅")
+                        .setPositiveButton("باشه", null).show();
+            } catch (Exception e) {
+                toast("خواندن فایل ناموفق: " + e);
+            }
+        }
     }
 
     // ---------- جریان تولید کلید جدید: هشدار → PIN → تولید ----------
@@ -271,9 +282,7 @@ public class SettingsActivity extends Activity {
             String stations = collectStations();
             if (stations.isEmpty()) { toast("حداقل یک ایستگاه با نام لازم است"); return; }
 
-            Cfg.set(this, "token", etToken.getText().toString().trim());
-            String chat = etChat.getText().toString().trim();
-            Cfg.set(this, "chatId", chat.isEmpty() ? 0L : Long.parseLong(chat));
+            Cfg.set(this, "bldgCode", normMobile(etCode.getText().toString().trim()));
             Cfg.set(this, "keyHex", etKey.getText().toString().trim().toLowerCase());
             Cfg.set(this, "building", etBuilding.getText().toString().trim());
             Cfg.set(this, "stations", stations);
@@ -284,67 +293,14 @@ public class SettingsActivity extends Activity {
             Cfg.set(this, "minGap", Math.max(0, Integer.parseInt(etGap.getText().toString().trim())));
             Cfg.set(this, "reportMin", hhmm2min(etReport.getText().toString()));
             Cfg.set(this, "wakeOn", cbWake.isChecked());
-            Cfg.set(this, "botEnabled", cbBot.isChecked());
             String pin = etPin.getText().toString().trim();
             if (!pin.isEmpty()) Cfg.set(this, "pin", pin);
-            Cfg.set(this, "tokenInvalid", false);
-
             Cfg.set(this, "plan", "{}");
             Scheduler.ensurePlan(this);
-            if (Cfg.botEnabled(this)) BotService.start(this); else BotService.stop(this);
             toast("✅ ذخیره شد — برنامهٔ امشب قرعه کشیده شد");
         } catch (Exception e) {
             toast("خطا در ذخیره: قالب ساعت‌ها HH:MM باشد");
         }
-    }
-
-    private void testToken() {
-        final String tk = etToken.getText().toString().trim();
-        if (tk.isEmpty()) { toast("توکن را وارد کنید"); return; }
-        toast("در حال بررسی…");
-        new Thread(new Runnable() {
-            @Override public void run() {
-                final boolean ok = Bale.tokenOk(tk);
-                runOnUiThread(new Runnable() {
-                    @Override public void run() { toast(ok ? "✅ توکن معتبر است" : "⛔ توکن نامعتبر یا اینترنت نیست"); }
-                });
-            }
-        }).start();
-    }
-
-    private void fetchChatId() {
-        final String tk = etToken.getText().toString().trim();
-        if (tk.isEmpty()) { toast("اول توکن را وارد کنید"); return; }
-        toast("اول مدیر باید یک‌بار به ربات پیام داده باشد…");
-        new Thread(new Runnable() {
-            @Override public void run() {
-                final Long id = Bale.lastChatId(tk);
-                runOnUiThread(new Runnable() {
-                    @Override public void run() {
-                        if (id == null) toast("پیامی پیدا نشد — اول در بله به ربات پیام بدهید");
-                        else { etChat.setText(String.valueOf(id)); toast("✅ chat_id: " + id); }
-                    }
-                });
-            }
-        }).start();
-    }
-
-    private void sendTest() {
-        final String tk = etToken.getText().toString().trim();
-        long ch;
-        try { ch = Long.parseLong(etChat.getText().toString().trim()); } catch (Exception e) { ch = 0; }
-        if (tk.isEmpty() || ch == 0) { toast("توکن و chat_id لازم است"); return; }
-        final long fch = ch;
-        toast("در حال ارسال…");
-        new Thread(new Runnable() {
-            @Override public void run() {
-                Bale.Res r = Bale.send(tk, fch, "✅ پیام آزمایشی سامانهٔ گشت — اتصال درست است");
-                Bale.checkClock(SettingsActivity.this, r);
-                runOnUiThread(new Runnable() {
-                    @Override public void run() { toast(r.ok ? "✅ ارسال شد" : "⛔ ارسال نشد (" + r.code + ")"); }
-                });
-            }
-        }).start();
     }
 
     private void showSigs() {
@@ -364,33 +320,6 @@ public class SettingsActivity extends Activity {
     // ---------- پشتیبان‌گیری ----------
 
     private String pendingBackup = null;
-
-    private void backupToBale() {
-        long ch = Cfg.chatId(this);
-        String tk = Cfg.token(this);
-        if (tk.isEmpty() || ch == 0) { toast("اول توکن و chat_id را ذخیره کن"); return; }
-        toast("در حال ساخت فایل پشتیبان…");
-        final byte[] data;
-        try {
-            data = Backup.make(this).getBytes("UTF-8");
-        } catch (Exception e) {
-            toast("خطا در ساخت پشتیبان: " + e);
-            return;
-        }
-        final long fch = ch;
-        final String fname = "negahban-backup-" + PatrolStore.now() + ".json";
-        new Thread(new Runnable() {
-            @Override public void run() {
-                Bale.Res r = Bale.sendDocument(Cfg.token(SettingsActivity.this), fch, data, fname,
-                        "💾 پشتیبان سامانهٔ گشت — " + Scheduler.jalaliDate(PatrolStore.now()));
-                runOnUiThread(new Runnable() {
-                    @Override public void run() {
-                        toast(r.ok ? "✅ فایل پشتیبان در بله ارسال شد" : "⛔ ارسال نشد (" + r.code + ") — از گزینهٔ ذخیرهٔ لوکال استفاده کن");
-                    }
-                });
-            }
-        }).start();
-    }
 
     private void backupToLocal() {
         try {
@@ -421,9 +350,7 @@ public class SettingsActivity extends Activity {
         }
     }
 
-    @Override
-    protected void onActivityResult(int req, int res, android.content.Intent data) {
-        super.onActivityResult(req, res, data);
+    private void onLegacyActivityResult(int req, int res, android.content.Intent data) {
         if (data == null || data.getData() == null) return;
         if (req == 91 && res == RESULT_OK) { // ذخیرهٔ لوکال
             try {
@@ -531,5 +458,93 @@ public class SettingsActivity extends Activity {
         if (!s.contains(":")) return Integer.parseInt(s);
         String[] p = s.split(":");
         return Integer.parseInt(p[0].trim()) * 60 + Integer.parseInt(p[1].trim());
+    }
+
+    private void checkCode() {
+        final String code = etCode.getText().toString().trim().toUpperCase();
+        if (code.isEmpty()) { toast("کد را وارد کن"); return; }
+        toast("در حال بررسی…");
+        new Thread(new Runnable() {
+            @Override public void run() {
+                Hub.Res r = Hub.dataGet(code, "roster");
+                final boolean ok = r.ok || r.err.contains("چیزی ثبت نشده");
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        toast(ok ? "✅ شمارهٔ مدیر معتبر است — ساختمان ثبت شده" : "⛔ " + (r.err.contains("nobldg") ? "با این شماره ساختمانی ثبت نشده" : r.err));
+                    }
+                });
+            }
+        }).start();
+    }
+
+    /** نرمال‌سازی شمارهٔ موبایل (فقط رقم؛ 0098/98 → 0) */
+    static String normMobile(String s) {
+        StringBuilder b = new StringBuilder();
+        for (char ch : s.toCharArray()) {
+            if (ch >= '0' && ch <= '9') b.append(ch);
+            else if (ch >= '۰' && ch <= '۹') b.append((char) ('0' + (ch - '۰')));
+        }
+        String m = b.toString();
+        if (m.startsWith("0098")) m = "0" + m.substring(4);
+        if (m.length() == 12 && m.startsWith("98")) m = "0" + m.substring(2);
+        if (m.length() == 10 && m.startsWith("9")) m = "0" + m;
+        return m;
+    }
+
+    // ---------- 📩 پشتیبانی (بله) ----------
+    private void supportDialog() {
+        try {
+            final EditText et = new EditText(this);
+            et.setHint("توضیح کوتاه (اختیاری)");
+            final String crash = CrashCatcher.lastCrash(this);
+            final String err = CrashCatcher.lastErr(this);
+            boolean has = (crash != null && !crash.trim().isEmpty()) || (err != null && !err.trim().isEmpty());
+            String msg = "گزارش مستقیم به ربات پشتیبانی در بله می‌رود و توسعه‌دهنده مطلع می‌شود.";
+            if (has) msg += "\n\n🐞 خطاهای ثبت‌شدهٔ همین گوشی هم ضمیمه می‌شود.";
+            new AlertDialog.Builder(this)
+                    .setTitle("📩 پشتیبانی (بله)")
+                    .setMessage(msg)
+                    .setView(et)
+                    .setPositiveButton("📤 ارسال", new DialogInterface.OnClickListener() {
+                        @Override public void onClick(DialogInterface d, int w) {
+                            sendSupport(et.getText().toString().trim(), crash, err);
+                        }
+                    })
+                    .setNegativeButton("انصراف", null).show();
+        } catch (Exception ignored) { }
+    }
+
+    private void sendSupport(final String text, final String crash, final String err) {
+        Toast.makeText(this, "⏳ در حال ارسال…", Toast.LENGTH_SHORT).show();
+        new Thread(new Runnable() {
+            @Override public void run() {
+                boolean ok = false;
+                try {
+                    String ver;
+                    try { ver = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception e) { ver = "?"; }
+                    org.json.JSONObject j = new org.json.JSONObject();
+                    j.put("app", "نگهبان‌یار");
+                    j.put("ver", ver);
+                    j.put("android", android.os.Build.VERSION.RELEASE);
+                    j.put("model", android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL);
+                    j.put("text", text == null ? "" : text);
+                    if (crash != null && !crash.trim().isEmpty()) j.put("crash", crash.length() > 2500 ? crash.substring(crash.length() - 2500) : crash);
+                    if (err != null && !err.trim().isEmpty()) j.put("err", err.length() > 2000 ? err.substring(err.length() - 2000) : err);
+                    String code = Hub.code(SettingsActivity.this);
+                    ok = Hub.msg(code, "support", "app:patrol", "SUPPORT", j.toString()).ok;
+                } catch (Exception ignored) { }
+                final boolean fok = ok;
+                runOnUiThread(new Runnable() {
+                    @Override public void run() {
+                        Toast.makeText(SettingsActivity.this, fok
+                                ? "✅ ارسال شد — توسعه‌دهنده در بله مطلع می‌شود 🙏"
+                                : "⛔ ارسال نشد — اینترنت را چک کن و دوباره تلاش کن", Toast.LENGTH_LONG).show();
+                        if (fok) {
+                            try { CrashCatcher.clearCrash(SettingsActivity.this); CrashCatcher.clearErrs(SettingsActivity.this); } catch (Exception ignored) { }
+                        }
+                    }
+                });
+            }
+        }, "support").start();
     }
 }

@@ -96,10 +96,10 @@ public class Backup {
             Object v = cfg.opt(k);
             if (v == null) continue;
             if (v instanceof Boolean) ed.putBoolean(k, (Boolean) v);
-            else if (v instanceof Number) {
-                if (k.equals("chatId") || k.equals("lastSync")) ed.putLong(k, ((Number) v).longValue());
-                else ed.putInt(k, ((Number) v).intValue());
-            } else ed.putString(k, String.valueOf(v));
+            else if (v instanceof Long) ed.putLong(k, (Long) v);
+            else if (v instanceof Integer) ed.putInt(k, (Integer) v);
+            else if (v instanceof Number) ed.putLong(k, ((Number) v).longValue());
+            else ed.putString(k, String.valueOf(v));
         }
         ed.apply();
 
@@ -140,7 +140,7 @@ public class Backup {
                 JSONObject g = gts.optJSONObject(i);
                 if (g == null) continue;
                 st.addGuestTs(g.optLong("ts"), g.optString("name"), g.optString("mobile"),
-                        g.optString("plate"), g.optString("nid"), g.optLong("outTs"));
+                        g.optString("plate"), g.optString("nid"), g.optLong("outTs"), g.optString("unit"));
                 nG++;
             }
         }

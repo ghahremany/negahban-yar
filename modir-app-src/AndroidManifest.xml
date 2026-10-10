@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="ir.negahban.modir"
+    android:versionCode="28"
+    android:versionName="2.6.16">
+
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34"/>
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+    <application
+        android:icon="@mipmap/ic_launcher"
+        android:label="مدیر یار"
+        android:supportsRtl="true"
+        android:allowBackup="true"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".SettingsActivity" android:exported="false"/>
+        <activity android:name=".ResidentsActivity" android:exported="false"/>
+        <activity android:name=".GuardActivity" android:exported="false"/>
+        <activity android:name=".ChargesActivity" android:exported="false"/>
+        <activity android:name=".CalendarActivity" android:exported="false"/>
+        <activity android:name=".NotificationsActivity" android:exported="false"/>
+        <activity android:name=".InboxActivity" android:exported="false"/>
+        <activity android:name=".LicenseActivity" android:exported="false"/>
+        <activity android:name=".ForceUpdateActivity" android:exported="false"/>
+
+        <service android:name=".HubService" android:exported="false"/>
+        <provider android:name=".ApkProvider" android:authorities="ir.negahban.modir.apk"
+            android:exported="false" android:grantUriPermissions="true"/>
+    </application>
+</manifest>

@@ -14,6 +14,11 @@ import java.io.File;
  */
 public class UpdaterUi {
 
+    /** اکتیویتی مرده/در حال بسته‌شدن — نمایش دیالوگ ممنوع (جلوگیری از BadTokenException) */
+    private static boolean gone(final Activity a) {
+        return a == null || a.isFinishing() || a.isDestroyed();
+    }
+
     public static void run(final Activity a, final boolean auto) {
         final TextView tvStatus = new TextView(a);
         tvStatus.setText(auto ? "…" : "در حال بررسی نسخهٔ جدید…");
@@ -29,6 +34,7 @@ public class UpdaterUi {
                 final Updater.Res r = Updater.check(a);
                 a.runOnUiThread(new Runnable() {
                     @Override public void run() {
+                        if (gone(a)) return;
                         try { wait.dismiss(); } catch (Exception ignored) {}
                         if (!r.ok) {
                             if (!auto) toast(a, "⛔ بررسی ناموفق: " + r.error);
@@ -47,6 +53,7 @@ public class UpdaterUi {
     }
 
     private static void showOffer(final Activity a, final Updater.Res r) {
+        if (gone(a)) return;
         String notes = r.notes == null ? "" : r.notes.trim();
         if (notes.length() > 700) notes = notes.substring(0, 700) + " …";
         String msg = "نسخهٔ جدید: v" + Scheduler.fa(r.tag) + "  (نسخهٔ فعلی: v"
@@ -91,6 +98,7 @@ public class UpdaterUi {
                     });
                     a.runOnUiThread(new Runnable() {
                         @Override public void run() {
+                            if (gone(a)) return;
                             try { dlg.dismiss(); } catch (Exception ignored) {}
                             new AlertDialog.Builder(a)
                                     .setTitle("دانلود کامل شد ✅")
@@ -111,6 +119,7 @@ public class UpdaterUi {
                 } catch (final Exception e) {
                     a.runOnUiThread(new Runnable() {
                         @Override public void run() {
+                            if (gone(a)) return;
                             try { dlg.dismiss(); } catch (Exception ignored) {}
                             toast(a, "⛔ دانلود ناموفق: " + e);
                         }
