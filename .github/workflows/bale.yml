@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
-      - name: poll bale ↔ brain on server (fast loop, ~2s latency)
+      - name: poll bale ↔ brain on server (fast loop + outbox thread)
         env:
           BALE_TOKEN: ${{ secrets.BALE_TOKEN }}
           NGY_KEY: ${{ secrets.NGY_KEY }}
           SITE: https://negahbanyar.xo.je
         run: |
           python3 - <<'PY'
-          import json, os, re, subprocess, time, urllib.request, urllib.parse
+          import json, os, re, subprocess, threading, time, urllib.request, urllib.parse
           TOK = os.environ['BALE_TOKEN']; KEY = os.environ['NGY_KEY']; SITE = os.environ['SITE']
           def bale(m, p=None, t=40):
               u = f'https://tapi.bale.ai/bot{TOK}/{m}'
@@ -58,7 +58,7 @@ jobs:
                   try: return json.loads(body)
                   except Exception: time.sleep(1)
               return {'ok': False, 'err': 'srv unreachable'}
-          OFF = {'v': None}; LAST = {'ob': 0.0}
+          OFF = {'v': None}
           def poll_once(k):
               if OFF['v'] is None:
                   OFF['v'] = int(srv('offset').get('offset', 0) or 0)
@@ -78,19 +78,25 @@ jobs:
                       else: print('SEND FAIL', json.dumps(rr, ensure_ascii=False)[:200], flush=True)
                   OFF['v'] = max(OFF['v'], u['update_id'] + 1); n += 1
                   srv('offset', {'value': OFF['v']})
-              osent = 0
-              if time.time() - LAST['ob'] > 12:
-                  LAST['ob'] = time.time()
-                  ob = srv('outbox')
-                  for o in (ob.get('items') or []):
-                      rr = bale('sendMessage', {'chat_id': o['chat'], 'text': (o['text'] or '')[:4000]})
-                      if rr.get('ok'): srv('sent', {'id': o['id']}); osent += 1
-              if n or osent: print(f'iter{k}: updates={n} replied={sent} outbox={osent}', flush=True)
+              if n: print(f'iter{k}: updates={n} replied={sent}', flush=True)
+          def outbox_loop():
+              while True:
+                  try:
+                      ob = srv('outbox')
+                      for o in (ob.get('items') or []):
+                          rr = bale('sendMessage', {'chat_id': o['chat'], 'text': (o['text'] or '')[:4000]})
+                          if rr.get('ok'):
+                              srv('sent', {'id': o['id']})
+                              print('outbox sent', o['id'], flush=True)
+                  except Exception as e:
+                      print('outbox err:', e, flush=True)
+                  time.sleep(10)
+          threading.Thread(target=outbox_loop, daemon=True).start()
           k = 0
           while True:
               k += 1
               try: poll_once(k)
               except Exception as e:
                   print('loop err:', e, flush=True); time.sleep(3)
-              time.sleep(2)
+              time.sleep(1)
           PY
