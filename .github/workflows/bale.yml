@@ -32,12 +32,13 @@ jobs:
                       if i == 2: return {'ok': False, 'err': str(e)}
                       time.sleep(1)
           TEST = {'v': ''}
+          def raw_req(req, t=45):
+              with urllib.request.urlopen(req, timeout=t) as r:
+                  return r.read().decode('utf-8', 'replace')
           def raw(u, t=45):
               h = {'User-Agent': 'okhttp/4.9.3'}
               if TEST['v']: h['Cookie'] = '__test=' + TEST['v']
-              req = urllib.request.Request(u, headers=h)
-              with urllib.request.urlopen(req, timeout=t) as r:
-                  return r.read().decode('utf-8', 'replace')
+              return raw_req(urllib.request.Request(u, headers=h), t)
           def solve(html):
               v = re.findall(r'toNumbers\("([0-9a-fA-F]+)"\)', html)
               if len(v) < 3: return ''
@@ -93,6 +94,25 @@ jobs:
                   except Exception as e:
                       print('ai err:', e, flush=True); time.sleep(2)
               return ''
+          def srv_post(a, p=None):
+              p = dict(p or {}); p['action'] = a; p['key'] = KEY
+              u = SITE + '/bale/bot.php'
+              data = urllib.parse.urlencode(p).encode()
+              for i in range(5):
+                  try:
+                      h = {'User-Agent': 'okhttp/4.9.3', 'Content-Type': 'application/x-www-form-urlencoded'}
+                      if TEST['v']: h['Cookie'] = '__test=' + TEST['v']
+                      req = urllib.request.Request(u, data=data, headers=h)
+                      body = raw_req(req)
+                  except Exception:
+                      time.sleep(1 + i); continue
+                  if 'aes.js' in body:
+                      v = solve(body)
+                      if v: TEST['v'] = v
+                      continue
+                  try: return json.loads(body)
+                  except Exception: time.sleep(1)
+              return {'ok': False, 'err': 'srv_post unreachable'}
           OFF = {'v': None}
           def poll_once(k):
               if OFF['v'] is None:
@@ -112,7 +132,7 @@ jobs:
                       reply = ai_answer(q)
                       ok = 1 if reply else 0
                       if not reply: reply = (r.get('fallback') or '').strip()
-                      srv('ailog', {'chat': c, 'q': q, 'a': reply, 'ok': ok})
+                      srv_post('ailog', {'chat': c, 'q': q[:500], 'a': reply[:1500], 'ok': ok})
                       print('ai q=' + q[:60] + ' ok=' + str(ok), flush=True)
                   if reply:
                       rr = bale('sendMessage', {'chat_id': c, 'text': reply[:4000]})
