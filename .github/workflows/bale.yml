@@ -211,7 +211,9 @@ jobs:
                       if ups:
                           sent = handle_updates(name, ups)
                           if name == 'rubika':
-                              if nxt: meta_set('offset_' + name, nxt)
+                              if nxt:
+                                  off = nxt
+                                  meta_set('offset_' + name, nxt)
                           else:
                               off = max(int(u.get('update_id', 0)) for u in ups) + 1
                               meta_set('offset_' + name, off)
