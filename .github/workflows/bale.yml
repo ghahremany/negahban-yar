@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
-      - name: poll bale ↔ brain on server (loop, ~60s latency)
+      - name: poll bale ↔ brain on server (fast loop, ~2s latency)
         env:
           BALE_TOKEN: ${{ secrets.BALE_TOKEN }}
           NGY_KEY: ${{ secrets.NGY_KEY }}
@@ -28,7 +28,7 @@ jobs:
                       with urllib.request.urlopen(u, timeout=t) as r: return json.load(r)
                   except Exception as e:
                       if i == 2: return {'ok': False, 'err': str(e)}
-                      time.sleep(2)
+                      time.sleep(1)
           TEST = {'v': ''}
           def raw(u, t=45):
               h = {'User-Agent': 'okhttp/4.9.3'}
@@ -48,46 +48,49 @@ jobs:
               for i in range(5):
                   try: body = raw(u)
                   except Exception:
-                      time.sleep(2 + i * 2); continue
+                      time.sleep(1 + i); continue
                   if 'aes.js' in body:
                       v = solve(body)
                       if v: TEST['v'] = v
-                      time.sleep(1); continue
+                      continue
                   if not body.strip():
-                      time.sleep(2 + i * 2); continue
+                      time.sleep(1 + i); continue
                   try: return json.loads(body)
-                  except Exception: time.sleep(2)
+                  except Exception: time.sleep(1)
               return {'ok': False, 'err': 'srv unreachable'}
+          OFF = {'v': None}; LAST = {'ob': 0.0}
           def poll_once(k):
-              off = int(srv('offset').get('offset', 0))
-              up = bale('getUpdates', {'offset': off, 'timeout': 30})
-              n = sent = 0; failed = False
+              if OFF['v'] is None:
+                  OFF['v'] = int(srv('offset').get('offset', 0) or 0)
+              up = bale('getUpdates', {'offset': OFF['v'], 'timeout': 25})
+              n = sent = 0
               for u in (up.get('result') or []):
                   m = u.get('message') or {}; c = (m.get('chat') or {}).get('id'); t = m.get('text')
                   if not c or not t:
-                      off = max(off, u['update_id'] + 1); continue
+                      OFF['v'] = max(OFF['v'], u['update_id'] + 1); continue
                   r = srv('feed', {'chat': c, 'text': t})
                   if not r.get('ok'):
-                      print('FEED FAIL', json.dumps(r, ensure_ascii=False)[:200], flush=True); failed = True; break
+                      print('FEED FAIL', json.dumps(r, ensure_ascii=False)[:200], flush=True); break
                   reply = (r.get('reply') or '').strip()
                   if reply:
                       rr = bale('sendMessage', {'chat_id': c, 'text': reply[:4000]})
                       if rr.get('ok'): sent += 1
                       else: print('SEND FAIL', json.dumps(rr, ensure_ascii=False)[:200], flush=True)
-                  off = max(off, u['update_id'] + 1); n += 1
-                  srv('offset', {'value': off})
-                  time.sleep(0.4)
-              if not failed: srv('offset', {'value': off})
-              ob = srv('outbox'); osent = 0
-              for o in (ob.get('items') or []):
-                  rr = bale('sendMessage', {'chat_id': o['chat'], 'text': (o['text'] or '')[:4000]})
-                  if rr.get('ok'): srv('sent', {'id': o['id']}); osent += 1
-              print(f'iter{k}: updates={n} replied={sent} outbox={osent} failed={failed}', flush=True)
+                  OFF['v'] = max(OFF['v'], u['update_id'] + 1); n += 1
+                  srv('offset', {'value': OFF['v']})
+              osent = 0
+              if time.time() - LAST['ob'] > 12:
+                  LAST['ob'] = time.time()
+                  ob = srv('outbox')
+                  for o in (ob.get('items') or []):
+                      rr = bale('sendMessage', {'chat_id': o['chat'], 'text': (o['text'] or '')[:4000]})
+                      if rr.get('ok'): srv('sent', {'id': o['id']}); osent += 1
+              if n or osent: print(f'iter{k}: updates={n} replied={sent} outbox={osent}', flush=True)
           k = 0
           while True:
               k += 1
               try: poll_once(k)
               except Exception as e:
-                  print('loop err:', e, flush=True); time.sleep(10)
-              time.sleep(30)
+                  print('loop err:', e, flush=True); time.sleep(3)
+              time.sleep(2)
           PY
