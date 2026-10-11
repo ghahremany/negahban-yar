@@ -126,12 +126,11 @@ jobs:
           def ch_api(name, method, params=None, t=40):
               ch = CH[name]
               if not ch['tok']: return {'ok': False, 'err': 'no token'}
+              u = ch['base'] + ch['tok'] + '/' + method
               if name == 'rubika':
-                  u = ch['base'] + ch['tok'] + '/' + method
-                  data = json.dumps(params or {}).encode()
-                  req = urllib.request.Request(u, data=data, headers={'Content-Type': 'application/json'})
+                  req = urllib.request.Request(u, data=json.dumps(params or {}).encode(),
+                                               headers={'Content-Type': 'application/json'})
               else:
-                  u = ch['base'] + ch['tok'] + '/' + method
                   if params: u += '?' + urllib.parse.urlencode(params)
                   req = urllib.request.Request(u)
               for i in range(3):
@@ -140,14 +139,40 @@ jobs:
                   except Exception as e:
                       if i == 2: return {'ok': False, 'err': str(e)}
                       time.sleep(1)
-          def handle_updates(name, ups):
-              ch = CH[name]; sent = 0
+          def ch_ok(name, r):
+              if not isinstance(r, dict): return False
+              if name == 'rubika': return r.get('status') == 'OK'
+              return bool(r.get('ok'))
+          def parse_updates(name, ups):
+              out = []
               for u in ups:
-                  m = u.get('message') or {}
-                  c = (m.get('chat') or {}).get('id')
-                  t = m.get('text')
-                  if not c or not t: continue
-                  chat = ch['ns'] + int(c)
+                  if name == 'rubika':
+                      if u.get('type') != 'NewMessage': continue
+                      nm = u.get('new_message') or {}
+                      if (nm.get('sender_type') or '') != 'User': continue
+                      c = u.get('chat_id'); t = nm.get('text')
+                  else:
+                      m = u.get('message') or {}
+                      c = (m.get('chat') or {}).get('id'); t = m.get('text')
+                  if c is not None and t: out.append((str(c), str(t)))
+              return out
+          def resolve_chat(name, ext):
+              if name in ('bale', 'telegram'):
+                  try: return CH[name]['ns'] + int(ext)
+                  except Exception: return 0
+              r = srv('chatmap', {'ch': name, 'ext': ext})
+              return int(r.get('chat') or 0)
+          def resolve_ext(name, chat):
+              if name in ('bale', 'telegram'):
+                  return str(int(chat) - CH[name]['ns'])
+              r = srv('chatmap', {'chat': int(chat)})
+              return (r.get('ext') or '') if r.get('ok') else ''
+          def handle_updates(name, ups):
+              sent = 0
+              for ext, t in parse_updates(name, ups):
+                  chat = resolve_chat(name, ext)
+                  if not chat:
+                      print(name, 'no chat for', ext[:24], flush=True); continue
                   r = srv('feed', {'chat': chat, 'text': t})
                   if not r.get('ok'):
                       print(name, 'FEED FAIL', json.dumps(r, ensure_ascii=False)[:150], flush=True); break
@@ -160,8 +185,8 @@ jobs:
                       srv_post('ailog', {'chat': chat, 'q': q[:500], 'a': reply[:1500], 'ok': ok})
                       print(name, 'ai ok=' + str(ok), flush=True)
                   if reply:
-                      rr = ch_api(name, 'sendMessage', {'chat_id': c, 'text': reply[:4000]})
-                      if rr.get('ok'): sent += 1
+                      rr = ch_api(name, 'sendMessage', {'chat_id': ext, 'text': reply[:4000]})
+                      if ch_ok(name, rr): sent += 1
                       else: print(name, 'SEND FAIL', json.dumps(rr, ensure_ascii=False)[:150], flush=True)
               return sent
           def channel_loop(name):
@@ -171,18 +196,29 @@ jobs:
               off = None
               while True:
                   try:
-                      if off is None:
-                          off = int(meta_get('offset_' + name) or (meta_get('offset') if name == 'bale' else 0) or 0)
-                      up = ch_api(name, 'getUpdates', {'offset': off, 'timeout': 25})
-                      ups = up.get('result') or []
+                      if name == 'rubika':
+                          if off is None: off = meta_get('offset_' + name) or None
+                          up = ch_api(name, 'getUpdates', ({'start_id': off} if off else {}), t=25)
+                          data = up.get('data') or {}
+                          ups = data.get('updates') or []
+                          nxt = data.get('next_offset_id')
+                      else:
+                          if off is None:
+                              off = int(meta_get('offset_' + name) or (meta_get('offset') if name == 'bale' else 0) or 0)
+                          up = ch_api(name, 'getUpdates', {'offset': off, 'timeout': 25})
+                          ups = up.get('result') or []
+                          nxt = None
                       if ups:
                           sent = handle_updates(name, ups)
-                          off = max(int(u.get('update_id', 0)) for u in ups) + 1
-                          meta_set('offset_' + name, off)
+                          if name == 'rubika':
+                              if nxt: meta_set('offset_' + name, nxt)
+                          else:
+                              off = max(int(u.get('update_id', 0)) for u in ups) + 1
+                              meta_set('offset_' + name, off)
                           print(name, 'updates=%d replied=%d' % (len(ups), sent), flush=True)
                   except Exception as e:
                       print(name, 'loop err:', e, flush=True); time.sleep(3)
-                  time.sleep(1)
+                  time.sleep(2 if name == 'rubika' else 1)
           def outbox_loop():
               while True:
                   try:
@@ -191,8 +227,10 @@ jobs:
                           chat = int(o['chat']); text = (o['text'] or '')[:4000]
                           for name, ch in CH.items():
                               if ch['tok'] and ch['ns'] <= chat < ch['ns'] + NS:
-                                  rr = ch_api(name, 'sendMessage', {'chat_id': chat - ch['ns'], 'text': text})
-                                  if rr.get('ok'):
+                                  ext = resolve_ext(name, chat)
+                                  if not ext: break
+                                  rr = ch_api(name, 'sendMessage', {'chat_id': ext, 'text': text})
+                                  if ch_ok(name, rr):
                                       srv('sent', {'id': o['id']})
                                       print('outbox sent', o['id'], name, flush=True)
                                   break
