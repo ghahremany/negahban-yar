@@ -80,10 +80,18 @@ jobs:
               return {'ok': False, 'err': 'srv_post unreachable'}
           KB = ''
           try:
-              KB = open('knowledge/faq.md', encoding='utf-8').read()
-              print('knowledge base loaded:', len(KB), 'chars', flush=True)
+              _kb = srv('kb')
+              if _kb.get('ok') and (_kb.get('content') or '').strip():
+                  KB = _kb['content']
+                  print('KB from panel/db:', len(KB), 'chars', flush=True)
           except Exception as e:
-              print('KB load err:', e, flush=True)
+              print('KB server err:', e, flush=True)
+          if not KB:
+              try:
+                  KB = open('knowledge/faq.md', encoding='utf-8').read()
+                  print('KB from repo:', len(KB), 'chars', flush=True)
+              except Exception as e:
+                  print('KB load err:', e, flush=True)
           SYS = ("تو دستیار پشتیبانی «نگهبان‌یار» هستی — مجموعه‌ای سه‌اپی برای مدیریت ساختمان‌های مسکونی.\n"
                  "فقط و فقط بر اساس «دانش محصول» که در پیام کاربر می‌آید پاسخ بده.\n"
                  "اگر پاسخ در دانش محصول نبود، فقط کلمهٔ UNKNOWN را بنویس و هیچ توضیحی اضافه نکن.\n"
