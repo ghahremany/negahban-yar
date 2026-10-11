@@ -78,11 +78,12 @@ jobs:
               key = os.environ.get('GROQ_API_KEY', '')
               if not key or not KB: return ''
               body = json.dumps({
-                  "model": "llama-3.3-70b-versatile", "temperature": 0.2, "max_tokens": 600,
+                  "model": "openai/gpt-oss-120b", "temperature": 0.2, "max_tokens": 600,
                   "messages": [{"role": "system", "content": SYS},
                                {"role": "user", "content": "### دانش محصول:\n" + KB + "\n\n### سؤال کاربر:\n" + q}]}).encode()
               req = urllib.request.Request('https://api.groq.com/openai/v1/chat/completions', data=body,
-                                           headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json'})
+                                           headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json',
+                                          'User-Agent': 'okhttp/4.9.3'})
               for i in range(2):
                   try:
                       with urllib.request.urlopen(req, timeout=25) as r: d = json.load(r)
