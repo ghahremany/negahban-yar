@@ -11,10 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 300
     steps:
-      - name: poll bale ↔ brain on server (fast loop + outbox thread)
+      - uses: actions/checkout@v4
+      - name: poll bale ↔ brain on server (fast loop + AI assistant)
         env:
           BALE_TOKEN: ${{ secrets.BALE_TOKEN }}
           NGY_KEY: ${{ secrets.NGY_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SITE: https://negahbanyar.xo.je
         run: |
           python3 - <<'PY'
@@ -58,6 +60,38 @@ jobs:
                   try: return json.loads(body)
                   except Exception: time.sleep(1)
               return {'ok': False, 'err': 'srv unreachable'}
+          KB = ''
+          try:
+              KB = open('knowledge/faq.md', encoding='utf-8').read()
+              print('knowledge base loaded:', len(KB), 'chars', flush=True)
+          except Exception as e:
+              print('KB load err:', e, flush=True)
+          SYS = ("تو دستیار پشتیبانی «نگهبان‌یار» هستی — مجموعه‌ای سه‌اپی برای مدیریت ساختمان‌های مسکونی.\n"
+                 "فقط و فقط بر اساس «دانش محصول» که در پیام کاربر می‌آید پاسخ بده.\n"
+                 "اگر پاسخ در دانش محصول نبود، فقط کلمهٔ UNKNOWN را بنویس و هیچ توضیحی اضافه نکن.\n"
+                 "قواعد: پاسخ کوتاه (حداکثر ۶ خط)، فارسی محاوره‌ای و محترمانه، ایموجی کم و به‌جا.\n"
+                 "هرگز قیمت، تخفیف، شرط یا وعدهٔ زمانی که در دانش نیست از خودت نساز.\n"
+                 "هرگز اطلاعات کاربران، ساکنان یا ساختمان‌ها را اعلام نکن.\n"
+                 "کلمات ممنوع: «بدون سرور»، «گیت‌هاب»، «لایسنس»، «API» — به‌جایشان: «نصب ساده»، «گزارش خودکار»، «فعال‌سازی».\n"
+                 "اگر کاربر درخواست کار خارج از پشتیبانی محصول داشت، بگو برای پیگیری با پشتیبانی انسانی تماس بگیرد.")
+          def ai_answer(q):
+              key = os.environ.get('GROQ_API_KEY', '')
+              if not key or not KB: return ''
+              body = json.dumps({
+                  "model": "llama-3.3-70b-versatile", "temperature": 0.2, "max_tokens": 600,
+                  "messages": [{"role": "system", "content": SYS},
+                               {"role": "user", "content": "### دانش محصول:\n" + KB + "\n\n### سؤال کاربر:\n" + q}]}).encode()
+              req = urllib.request.Request('https://api.groq.com/openai/v1/chat/completions', data=body,
+                                           headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json'})
+              for i in range(2):
+                  try:
+                      with urllib.request.urlopen(req, timeout=25) as r: d = json.load(r)
+                      t = ((d.get('choices') or [{}])[0].get('message') or {}).get('content', '').strip()
+                      if not t or 'UNKNOWN' in t.upper(): return ''
+                      return t[:3500]
+                  except Exception as e:
+                      print('ai err:', e, flush=True); time.sleep(2)
+              return ''
           OFF = {'v': None}
           def poll_once(k):
               if OFF['v'] is None:
@@ -72,6 +106,13 @@ jobs:
                   if not r.get('ok'):
                       print('FEED FAIL', json.dumps(r, ensure_ascii=False)[:200], flush=True); break
                   reply = (r.get('reply') or '').strip()
+                  if not reply and r.get('ai'):
+                      q = r.get('q') or t
+                      reply = ai_answer(q)
+                      ok = 1 if reply else 0
+                      if not reply: reply = (r.get('fallback') or '').strip()
+                      srv('ailog', {'chat': c, 'q': q, 'a': reply, 'ok': ok})
+                      print('ai q=' + q[:60] + ' ok=' + str(ok), flush=True)
                   if reply:
                       rr = bale('sendMessage', {'chat_id': c, 'text': reply[:4000]})
                       if rr.get('ok'): sent += 1
