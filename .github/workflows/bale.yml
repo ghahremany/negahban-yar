@@ -198,7 +198,7 @@ jobs:
                   try:
                       if name == 'rubika':
                           if off is None: off = meta_get('offset_' + name) or None
-                          up = ch_api(name, 'getUpdates', ({'start_id': off} if off else {}), t=25)
+                          up = ch_api(name, 'getUpdates', ({'offset_id': off, 'limit': 50} if off else {'limit': 50}), t=25)
                           data = up.get('data') or {}
                           ups = data.get('updates') or []
                           nxt = data.get('next_offset_id')
