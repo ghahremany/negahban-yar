@@ -14,7 +14,7 @@ jobs:
       - name: poll bale ↔ brain on server (loop, ~60s latency)
         env:
           BALE_TOKEN: ${{ secrets.BALE_TOKEN }}
-          NGY_KEY: NGY-CLOUD-7c4e2f91a8d63b50e7f1c2a493d85b6e
+          NGY_KEY: ${{ secrets.NGY_KEY }}
           SITE: https://negahbanyar.xo.je
         run: |
           python3 - <<'PY'
