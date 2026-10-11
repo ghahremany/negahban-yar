@@ -221,6 +221,104 @@ jobs:
                   except Exception as e:
                       print(name, 'loop err:', e, flush=True); time.sleep(3)
                   time.sleep(2 if name == 'rubika' else 1)
+          def srv2(action, p=None, t=180):
+              p = dict(p or {}); p['action'] = action; p['key'] = KEY
+              u = SITE + '/api/backup2.php?' + urllib.parse.urlencode(p)
+              for i in range(4):
+                  try: body = raw(u, t)
+                  except Exception:
+                      time.sleep(2); continue
+                  if 'aes.js' in body:
+                      v = solve(body)
+                      if v: TEST['v'] = v
+                      continue
+                  try: return json.loads(body)
+                  except Exception: time.sleep(2)
+              return {'ok': False, 'err': 'srv2 unreachable'}
+          def dl_backup(name):
+              u = SITE + '/api/backup2.php?' + urllib.parse.urlencode({'action': 'dl', 'key': KEY, 'f': name})
+              for i in range(3):
+                  h = {'User-Agent': 'okhttp/4.9.3'}
+                  if TEST['v']: h['Cookie'] = '__test=' + TEST['v']
+                  try:
+                      with urllib.request.urlopen(urllib.request.Request(u, headers=h), timeout=180) as r:
+                          data = r.read()
+                  except Exception as e:
+                      print('bk dl err:', e, flush=True); time.sleep(2); continue
+                  if b'aes.js' in data[:3000]:
+                      v = solve(data.decode('utf-8', 'replace'))
+                      if v: TEST['v'] = v
+                      continue
+                  return data
+              return None
+          def _mp(fields, files):
+              b = '----ngy' + str(int(time.time() * 1000))
+              out = b''
+              for k, v in fields.items():
+                  out += ('--' + b + '\r\nContent-Disposition: form-data; name="' + k + '"\r\n\r\n' + str(v) + '\r\n').encode()
+              for k, fv in files.items():
+                  fn, data = fv
+                  out += ('--' + b + '\r\nContent-Disposition: form-data; name="' + k + '"; filename="' + fn + '"\r\nContent-Type: application/zip\r\n\r\n').encode() + data + b'\r\n'
+              out += ('--' + b + '--\r\n').encode()
+              return b, out
+          def send_doc(ch, chat, data, fname):
+              if ch in ('bale', 'telegram'):
+                  b, body = _mp({'chat_id': chat, 'caption': '💾 پشتیبان روزانه نگهبان‌یار — ' + fname},
+                                {'document': (fname, data)})
+                  req = urllib.request.Request(CH[ch]['base'] + CH[ch]['tok'] + '/sendDocument', data=body,
+                                               headers={'Content-Type': 'multipart/form-data; boundary=' + b})
+                  try:
+                      with urllib.request.urlopen(req, timeout=180) as r: return json.load(r)
+                  except Exception as e: return {'ok': False, 'err': str(e)[:150]}
+              if ch == 'rubika':
+                  r1 = ch_api('rubika', 'requestSendFile', {'type': 'File'}, t=60)
+                  up = ((r1.get('data') or {}).get('upload_url')) or ''
+                  if not up: return {'ok': False, 'err': 'no upload_url'}
+                  b, body = _mp({}, {'file': (fname, data)})
+                  req = urllib.request.Request(up, data=body, headers={'Content-Type': 'multipart/form-data; boundary=' + b})
+                  try:
+                      with urllib.request.urlopen(req, timeout=180) as r: r2 = json.load(r)
+                  except Exception as e: return {'ok': False, 'err': 'upload ' + str(e)[:120]}
+                  fid = ((r2.get('data') or {}).get('file_id')) or r2.get('file_id') or ''
+                  if not fid: return {'ok': False, 'err': 'no file_id'}
+                  return ch_api('rubika', 'sendFile', {'chat_id': chat, 'file_id': fid, 'text': '💾 پشتیبان روزانه نگهبان‌یار'}, t=60)
+              return {'ok': False, 'err': 'unknown channel'}
+          def backup_loop():
+              while True:
+                  try:
+                      c = srv2('cfg')
+                      if c.get('ok') and str(c.get('enabled')) == '1':
+                          t = time.gmtime(time.time() + 12600)
+                          today = '%04d-%02d-%02d' % (t.tm_year, t.tm_mon, t.tm_mday)
+                          hh = int(c.get('hour') or 12); mm = int(c.get('minute') or 0)
+                          due = (t.tm_hour > hh) or (t.tm_hour == hh and t.tm_min >= mm)
+                          if due and str(c.get('last_run') or '') != today:
+                              print('backup: building...', flush=True)
+                              r = srv2('build')
+                              if not r.get('ok'):
+                                  print('backup build failed:', json.dumps(r, ensure_ascii=False)[:200], flush=True)
+                              else:
+                                  name = r['name']; dests = []
+                                  data = dl_backup(name)
+                                  if data:
+                                      for ch in ('bale', 'telegram', 'rubika'):
+                                          if str(c.get('dest_' + ch)) != '1': continue
+                                          chat = str(c.get('chat_' + ch) or '')
+                                          if not chat: continue
+                                          ext = resolve_ext(ch, int(chat)) if chat.isdigit() else chat
+                                          if not ext: continue
+                                          rr = send_doc(ch, ext, data, name)
+                                          ok = ch_ok(ch, rr)
+                                          dests.append(ch + ('✅' if ok else '❌'))
+                                          if not ok: print('backup send fail', ch, json.dumps(rr, ensure_ascii=False)[:150], flush=True)
+                                      if str(c.get('dest_email')) == '1' and c.get('email_to'):
+                                          re_ = srv2('email', {'f': name, 'to': c['email_to']})
+                                          dests.append('email' + ('✅' if re_.get('ok') else '❌'))
+                                  srv2('mark', {'name': name, 'status': ('ارسال شد: ' + ' '.join(dests)) if dests else 'ساخته شد (بدون ارسال)'})
+                                  print('backup done:', name, dests, flush=True)
+                  except Exception as e:
+                      print('backup err:', e, flush=True)
+                  time.sleep(300)
           def outbox_loop():
               while True:
                   try:
@@ -242,6 +340,7 @@ jobs:
           for n in CH:
               threading.Thread(target=channel_loop, args=(n,), daemon=True).start()
           threading.Thread(target=outbox_loop, daemon=True).start()
+          threading.Thread(target=backup_loop, daemon=True).start()
           while True:
               time.sleep(60)
           PY
