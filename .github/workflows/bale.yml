@@ -95,8 +95,8 @@ jobs:
                       print('ai err:', e, flush=True); time.sleep(2)
               return ''
           def srv_post(a, p=None):
-              p = dict(p or {}); p['action'] = a; p['key'] = KEY
-              u = SITE + '/bale/bot.php'
+              p = dict(p or {})
+              u = SITE + '/bale/bot.php?' + urllib.parse.urlencode({'action': a, 'key': KEY})
               data = urllib.parse.urlencode(p).encode()
               for i in range(5):
                   try:
