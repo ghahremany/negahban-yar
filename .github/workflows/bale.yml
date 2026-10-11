@@ -12,25 +12,24 @@ jobs:
     timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
-      - name: poll bale ↔ brain on server (fast loop + AI assistant)
+      - name: multi-channel support bot (bale + telegram + rubika)
         env:
           BALE_TOKEN: ${{ secrets.BALE_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          RUBIKA_BOT_TOKEN: ${{ secrets.RUBIKA_BOT_TOKEN }}
           NGY_KEY: ${{ secrets.NGY_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           SITE: https://negahbanyar.xo.je
         run: |
           python3 - <<'PY'
           import json, os, re, subprocess, threading, time, urllib.request, urllib.parse
-          TOK = os.environ['BALE_TOKEN']; KEY = os.environ['NGY_KEY']; SITE = os.environ['SITE']
-          def bale(m, p=None, t=40):
-              u = f'https://tapi.bale.ai/bot{TOK}/{m}'
-              if p: u += '?' + urllib.parse.urlencode(p)
-              for i in range(3):
-                  try:
-                      with urllib.request.urlopen(u, timeout=t) as r: return json.load(r)
-                  except Exception as e:
-                      if i == 2: return {'ok': False, 'err': str(e)}
-                      time.sleep(1)
+          SITE = os.environ['SITE']; KEY = os.environ['NGY_KEY']
+          NS = 1000000000000
+          CH = {
+              'bale':     {'tok': os.environ.get('BALE_TOKEN', ''),          'base': 'https://tapi.bale.ai/bot',     'ns': 0},
+              'telegram': {'tok': os.environ.get('TELEGRAM_BOT_TOKEN', ''),  'base': 'https://api.telegram.org/bot', 'ns': NS},
+              'rubika':   {'tok': os.environ.get('RUBIKA_BOT_TOKEN', ''),    'base': 'https://botapi.rubika.ir/v3/', 'ns': 2 * NS},
+          }
           TEST = {'v': ''}
           def raw_req(req, t=45):
               with urllib.request.urlopen(req, timeout=t) as r:
@@ -61,6 +60,24 @@ jobs:
                   try: return json.loads(body)
                   except Exception: time.sleep(1)
               return {'ok': False, 'err': 'srv unreachable'}
+          def srv_post(a, p=None):
+              p = dict(p or {})
+              u = SITE + '/bale/bot.php?' + urllib.parse.urlencode({'action': a, 'key': KEY})
+              data = urllib.parse.urlencode(p).encode()
+              for i in range(5):
+                  try:
+                      h = {'User-Agent': 'okhttp/4.9.3', 'Content-Type': 'application/x-www-form-urlencoded'}
+                      if TEST['v']: h['Cookie'] = '__test=' + TEST['v']
+                      body = raw_req(urllib.request.Request(u, data=data, headers=h))
+                  except Exception:
+                      time.sleep(1 + i); continue
+                  if 'aes.js' in body:
+                      v = solve(body)
+                      if v: TEST['v'] = v
+                      continue
+                  try: return json.loads(body)
+                  except Exception: time.sleep(1)
+              return {'ok': False, 'err': 'srv_post unreachable'}
           KB = ''
           try:
               KB = open('knowledge/faq.md', encoding='utf-8').read()
@@ -84,7 +101,7 @@ jobs:
                                {"role": "user", "content": "### دانش محصول:\n" + KB + "\n\n### سؤال کاربر:\n" + q}]}).encode()
               req = urllib.request.Request('https://api.groq.com/openai/v1/chat/completions', data=body,
                                            headers={'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json',
-                                          'User-Agent': 'okhttp/4.9.3'})
+                                                    'User-Agent': 'okhttp/4.9.3'})
               for i in range(2):
                   try:
                       with urllib.request.urlopen(req, timeout=25) as r: d = json.load(r)
@@ -94,71 +111,89 @@ jobs:
                   except Exception as e:
                       print('ai err:', e, flush=True); time.sleep(2)
               return ''
-          def srv_post(a, p=None):
-              p = dict(p or {})
-              u = SITE + '/bale/bot.php?' + urllib.parse.urlencode({'action': a, 'key': KEY})
-              data = urllib.parse.urlencode(p).encode()
-              for i in range(5):
+          def meta_get(k):
+              return (srv('meta', {'k': k}).get('value') or '')
+          def meta_set(k, v):
+              srv('meta', {'k': k, 'value': str(v)})
+          def ch_api(name, method, params=None, t=40):
+              ch = CH[name]
+              if not ch['tok']: return {'ok': False, 'err': 'no token'}
+              if name == 'rubika':
+                  u = ch['base'] + ch['tok'] + '/' + method
+                  data = json.dumps(params or {}).encode()
+                  req = urllib.request.Request(u, data=data, headers={'Content-Type': 'application/json'})
+              else:
+                  u = ch['base'] + ch['tok'] + '/' + method
+                  if params: u += '?' + urllib.parse.urlencode(params)
+                  req = urllib.request.Request(u)
+              for i in range(3):
                   try:
-                      h = {'User-Agent': 'okhttp/4.9.3', 'Content-Type': 'application/x-www-form-urlencoded'}
-                      if TEST['v']: h['Cookie'] = '__test=' + TEST['v']
-                      req = urllib.request.Request(u, data=data, headers=h)
-                      body = raw_req(req)
-                  except Exception:
-                      time.sleep(1 + i); continue
-                  if 'aes.js' in body:
-                      v = solve(body)
-                      if v: TEST['v'] = v
-                      continue
-                  try: return json.loads(body)
-                  except Exception: time.sleep(1)
-              return {'ok': False, 'err': 'srv_post unreachable'}
-          OFF = {'v': None}
-          def poll_once(k):
-              if OFF['v'] is None:
-                  OFF['v'] = int(srv('offset').get('offset', 0) or 0)
-              up = bale('getUpdates', {'offset': OFF['v'], 'timeout': 25})
-              n = sent = 0
-              for u in (up.get('result') or []):
-                  m = u.get('message') or {}; c = (m.get('chat') or {}).get('id'); t = m.get('text')
-                  if not c or not t:
-                      OFF['v'] = max(OFF['v'], u['update_id'] + 1); continue
-                  r = srv('feed', {'chat': c, 'text': t})
+                      with urllib.request.urlopen(req, timeout=t) as r: return json.load(r)
+                  except Exception as e:
+                      if i == 2: return {'ok': False, 'err': str(e)}
+                      time.sleep(1)
+          def handle_updates(name, ups):
+              ch = CH[name]; sent = 0
+              for u in ups:
+                  m = u.get('message') or {}
+                  c = (m.get('chat') or {}).get('id')
+                  t = m.get('text')
+                  if not c or not t: continue
+                  chat = ch['ns'] + int(c)
+                  r = srv('feed', {'chat': chat, 'text': t})
                   if not r.get('ok'):
-                      print('FEED FAIL', json.dumps(r, ensure_ascii=False)[:200], flush=True); break
+                      print(name, 'FEED FAIL', json.dumps(r, ensure_ascii=False)[:150], flush=True); break
                   reply = (r.get('reply') or '').strip()
                   if not reply and r.get('ai'):
                       q = r.get('q') or t
                       reply = ai_answer(q)
                       ok = 1 if reply else 0
                       if not reply: reply = (r.get('fallback') or '').strip()
-                      srv_post('ailog', {'chat': c, 'q': q[:500], 'a': reply[:1500], 'ok': ok})
-                      print('ai q=' + q[:60] + ' ok=' + str(ok), flush=True)
+                      srv_post('ailog', {'chat': chat, 'q': q[:500], 'a': reply[:1500], 'ok': ok})
+                      print(name, 'ai ok=' + str(ok), flush=True)
                   if reply:
-                      rr = bale('sendMessage', {'chat_id': c, 'text': reply[:4000]})
+                      rr = ch_api(name, 'sendMessage', {'chat_id': c, 'text': reply[:4000]})
                       if rr.get('ok'): sent += 1
-                      else: print('SEND FAIL', json.dumps(rr, ensure_ascii=False)[:200], flush=True)
-                  OFF['v'] = max(OFF['v'], u['update_id'] + 1); n += 1
-                  srv('offset', {'value': OFF['v']})
-              if n: print(f'iter{k}: updates={n} replied={sent}', flush=True)
+                      else: print(name, 'SEND FAIL', json.dumps(rr, ensure_ascii=False)[:150], flush=True)
+              return sent
+          def channel_loop(name):
+              ch = CH[name]
+              if not ch['tok']:
+                  print(name, ': no token — skipped', flush=True); return
+              off = None
+              while True:
+                  try:
+                      if off is None:
+                          off = int(meta_get('offset_' + name) or (meta_get('offset') if name == 'bale' else 0) or 0)
+                      up = ch_api(name, 'getUpdates', {'offset': off, 'timeout': 25})
+                      ups = up.get('result') or []
+                      if ups:
+                          sent = handle_updates(name, ups)
+                          off = max(int(u.get('update_id', 0)) for u in ups) + 1
+                          meta_set('offset_' + name, off)
+                          print(name, 'updates=%d replied=%d' % (len(ups), sent), flush=True)
+                  except Exception as e:
+                      print(name, 'loop err:', e, flush=True); time.sleep(3)
+                  time.sleep(1)
           def outbox_loop():
               while True:
                   try:
                       ob = srv('outbox')
                       for o in (ob.get('items') or []):
-                          rr = bale('sendMessage', {'chat_id': o['chat'], 'text': (o['text'] or '')[:4000]})
-                          if rr.get('ok'):
-                              srv('sent', {'id': o['id']})
-                              print('outbox sent', o['id'], flush=True)
+                          chat = int(o['chat']); text = (o['text'] or '')[:4000]
+                          for name, ch in CH.items():
+                              if ch['tok'] and ch['ns'] <= chat < ch['ns'] + NS:
+                                  rr = ch_api(name, 'sendMessage', {'chat_id': chat - ch['ns'], 'text': text})
+                                  if rr.get('ok'):
+                                      srv('sent', {'id': o['id']})
+                                      print('outbox sent', o['id'], name, flush=True)
+                                  break
                   except Exception as e:
                       print('outbox err:', e, flush=True)
                   time.sleep(10)
+          for n in CH:
+              threading.Thread(target=channel_loop, args=(n,), daemon=True).start()
           threading.Thread(target=outbox_loop, daemon=True).start()
-          k = 0
           while True:
-              k += 1
-              try: poll_once(k)
-              except Exception as e:
-                  print('loop err:', e, flush=True); time.sleep(3)
-              time.sleep(1)
+              time.sleep(60)
           PY
