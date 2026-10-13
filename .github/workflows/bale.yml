@@ -241,6 +241,20 @@ jobs:
                   except Exception as e:
                       print('outbox err:', e, flush=True)
                   time.sleep(10)
+          def srv2(action, p=None, t=180):
+              p = dict(p or {}); p['action'] = action; p['key'] = KEY
+              u = SITE + '/api/backup2.php?' + urllib.parse.urlencode(p)
+              for i in range(4):
+                  try: body = raw(u, t)
+                  except Exception:
+                      time.sleep(2); continue
+                  if 'aes.js' in body:
+                      v = solve(body)
+                      if v: TEST['v'] = v
+                      continue
+                  try: return json.loads(body)
+                  except Exception: time.sleep(2)
+              return {'ok': False, 'err': 'srv2 unreachable'}
           def dl_backup(name):
               u = SITE + '/api/backup2.php?' + urllib.parse.urlencode({'action': 'dl', 'key': KEY, 'f': name})
               for i in range(3):
